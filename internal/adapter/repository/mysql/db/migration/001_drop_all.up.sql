@@ -1,0 +1,22 @@
+START TRANSACTION;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS `client_main_features`;
+DROP TABLE IF EXISTS `client_support_features`;
+DROP TABLE IF EXISTS `role_permissions`;
+DROP TABLE IF EXISTS `user_roles`;
+DROP TABLE IF EXISTS `roles`;
+DROP TABLE IF EXISTS `clients`;
+DROP TABLE IF EXISTS `main_features`;
+DROP TABLE IF EXISTS `support_features`;
+DROP TABLE IF EXISTS `permissions`;
+DROP TABLE IF EXISTS `districts`;
+DROP TABLE IF EXISTS `companies`;
+DROP TABLE IF EXISTS `cities`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `provinces`;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+COMMIT;

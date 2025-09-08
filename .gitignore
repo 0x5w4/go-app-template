@@ -1,0 +1,25 @@
+# Environment files
+.env
+.env.*
+
+# Keys
+keys/*.key
+keys/*.pem
+keys/*.crt
+keys/*.p12
+keys/*.csr
+
+# Configuration files
+config/config.yaml
+
+# Docker-related
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+
+# Credentials
+cred.json
+
+# Logs
+logs/*.log
+logging-stack/*

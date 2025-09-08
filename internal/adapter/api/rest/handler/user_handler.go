@@ -1,0 +1,260 @@
+package handler
+
+import (
+	"goapptemp/internal/adapter/api/rest/response"
+	"goapptemp/internal/adapter/api/rest/serializer"
+	"goapptemp/internal/adapter/repository/mysql"
+	"goapptemp/internal/adapter/util"
+	"goapptemp/internal/adapter/util/exception"
+	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/domain/service/user"
+
+	"github.com/cockroachdb/errors"
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
+)
+
+type CreateUser struct {
+	RoleIDs  []uint `json:"role_ids" validate:"required,dive,required,gt=0"`
+	Fullname string `json:"fullname" validate:"required,min=3,max=100"`
+	Username string `json:"username" validate:"required,min=3,max=100,username_chars_allowed"`
+	Email    string `json:"email" validate:"required,email,min=3,max=100"`
+	Password string `json:"password" validate:"required,password,max=200"`
+}
+
+type CreateUserRequest struct {
+	User CreateUser `json:"user" validate:"required"`
+}
+
+type UpdateUser struct {
+	ID       uint    `param:"id" validate:"required,gt=0"`
+	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
+	Email    *string `json:"email,omitempty" validate:"email,min=3,max=100"`
+	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
+	Password *string `json:"password,omitempty" validate:"password,max=200"`
+	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
+}
+
+type UpdateUserRequest struct {
+	User UpdateUser `json:"user" validate:"required"`
+}
+
+type FilterUserRequest struct {
+	IDs       []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
+	Usernames []string `query:"usernames" validate:"omitemptymin=3,max=100,username_chars_allowed"`
+	Emails    []string `query:"emails" validate:"email,min=3,max=100"`
+	Search    string   `query:"search" validate:"omitempty,min=1"`
+	Page      int      `query:"page" validate:"omitempty,min=1"`
+	PerPage   int      `query:"per_page" validate:"omitempty,min=1,max=100"`
+}
+
+func (h *Handler) CreateUser(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	authArg, err := getAuthArg(c)
+	if err != nil {
+		return err
+	}
+
+	req := new(CreateUserRequest)
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
+	}
+
+	util.Sanitize(req)
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Request validation failed")
+	}
+
+	user, err := h.service.User().Create(ctx, &user.CreateUserRequest{
+		AuthParams: &authArg,
+		User: &entity.User{
+			RoleIDs:  req.User.RoleIDs,
+			Fullname: req.User.Fullname,
+			Email:    req.User.Email,
+			Username: req.User.Username,
+			Password: req.User.Password,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	data := serializer.SerializeUser(user)
+
+	return response.Success(c, "Create user success", data)
+}
+
+func (h *Handler) FindUsers(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	authArg, err := getAuthArg(c)
+	if err != nil {
+		return err
+	}
+
+	req := new(FilterUserRequest)
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
+	}
+
+	util.Sanitize(req)
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+
+	if req.PerPage <= 0 {
+		req.PerPage = 10
+	} else if req.PerPage > 100 {
+		req.PerPage = 100
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Invalid query parameters")
+	}
+
+	users, totalCount, err := h.service.User().Find(ctx,
+		&user.FindUserRequest{
+			AuthParams: &authArg,
+			UserFilter: &mysql.FilterUserPayload{
+				IDs:       req.IDs,
+				Usernames: req.Usernames,
+				Emails:    req.Emails,
+				Search:    req.Search,
+				Page:      req.Page,
+				PerPage:   req.PerPage,
+			},
+		})
+	if err != nil {
+		return err
+	}
+
+	list := serializer.SerializeUsers(users)
+
+	pagination := response.Pagination{
+		Page:       req.Page,
+		PerPage:    req.PerPage,
+		TotalCount: totalCount,
+		TotalPage:  0,
+	}
+	if req.PerPage > 0 {
+		pagination.TotalPage = (totalCount + req.PerPage - 1) / req.PerPage
+	}
+
+	return response.Paginate(c, "Find users success", list, pagination)
+}
+
+func (h *Handler) FindOneUser(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	authArg, err := getAuthArg(c)
+	if err != nil {
+		return err
+	}
+
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	user, err := h.service.User().FindOne(ctx,
+		&user.FindOneUserRequest{
+			AuthParams: &authArg,
+			UserID:     id,
+		})
+	if err != nil {
+		return err
+	}
+
+	data := serializer.SerializeUser(user)
+
+	return response.Success(c, "Find user success", data)
+}
+
+func (h *Handler) UpdateUser(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	authArg, err := getAuthArg(c)
+	if err != nil {
+		return err
+	}
+
+	req := new(UpdateUserRequest)
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
+	}
+
+	util.Sanitize(req)
+
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	req.User.ID = id
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Request validation failed")
+	}
+
+	user, err := h.service.User().Update(ctx,
+		&user.UpdateUserRequest{
+			AuthParams: &authArg,
+			Update: &mysql.UpdateUserPayload{
+				ID:       req.User.ID,
+				RoleIDs:  req.User.RoleIDs,
+				Fullname: req.User.Fullname,
+				Email:    req.User.Email,
+				Username: req.User.Username,
+				Password: req.User.Password,
+			},
+		})
+	if err != nil {
+		return err
+	}
+
+	data := serializer.SerializeUser(user)
+
+	return response.Success(c, "Update user success", data)
+}
+
+func (h *Handler) DeleteUser(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	authArg, err := getAuthArg(c)
+	if err != nil {
+		return err
+	}
+
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		return err
+	}
+
+	err = h.service.User().Delete(ctx,
+		&user.DeleteUserRequest{
+			AuthParams: &authArg,
+			UserID:     id,
+		})
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "Delete user success", nil)
+}
