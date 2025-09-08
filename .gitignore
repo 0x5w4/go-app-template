@@ -15,7 +15,6 @@ config/config.yaml
 # Docker-related
 docker-compose.yml
 docker-compose.*.yml
-Dockerfile
 
 # Credentials
 cred.json
