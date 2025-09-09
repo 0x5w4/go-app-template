@@ -1,4 +1,4 @@
-package logger
+package hook
 
 import (
 	"context"
@@ -13,36 +13,36 @@ import (
 	"github.com/uptrace/bun"
 )
 
-var _ bun.QueryHook = (*QueryHook)(nil)
+var _ bun.QueryHook = (*LoggerQueryHook)(nil)
 
-type Option func(h *QueryHook)
+type LoggerOption func(h *LoggerQueryHook)
 
-func WithLogger(logger logger.Logger) Option {
-	return func(h *QueryHook) {
+func WithLogger(logger logger.Logger) LoggerOption {
+	return func(h *LoggerQueryHook) {
 		h.logger = logger
 	}
 }
 
-func WithDebug(debug bool) Option {
-	return func(h *QueryHook) {
+func WithDebug(debug bool) LoggerOption {
+	return func(h *LoggerQueryHook) {
 		h.debug = debug
 	}
 }
 
-func WithSlowQueryThreshold(threshold time.Duration) Option {
-	return func(h *QueryHook) {
+func WithSlowQueryThreshold(threshold time.Duration) LoggerOption {
+	return func(h *LoggerQueryHook) {
 		h.slowQueryThreshold = threshold
 	}
 }
 
-type QueryHook struct {
+type LoggerQueryHook struct {
 	logger             logger.Logger
 	debug              bool
 	slowQueryThreshold time.Duration
 }
 
-func NewQueryHook(opts ...Option) *QueryHook {
-	h := new(QueryHook)
+func NewLoggerQueryHook(opts ...LoggerOption) *LoggerQueryHook {
+	h := new(LoggerQueryHook)
 	for _, opt := range opts {
 		opt(h)
 	}
@@ -58,11 +58,11 @@ func NewQueryHook(opts ...Option) *QueryHook {
 	return h
 }
 
-func (h *QueryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) context.Context {
+func (h *LoggerQueryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) context.Context {
 	return ctx
 }
 
-func (h *QueryHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
+func (h *LoggerQueryHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
 	duration := time.Since(event.StartTime)
 	if duration <= h.slowQueryThreshold && event.Err == nil && !h.debug {
 		return

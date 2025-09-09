@@ -7,8 +7,7 @@ import (
 
 	"goapptemp/config"
 	"goapptemp/internal/adapter/logger"
-	loggerHook "goapptemp/internal/adapter/repository/mysql/db/hook/logger"
-	tracerHook "goapptemp/internal/adapter/repository/mysql/db/hook/tracer"
+	"goapptemp/internal/adapter/repository/mysql/db/hook"
 	migrationFS "goapptemp/internal/adapter/repository/mysql/db/migration"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -52,12 +51,12 @@ func (d *BunDB) connect() error {
 	sqlDB.SetConnMaxLifetime(time.Duration(d.config.MySQL.ConnMaxLifetime) * time.Minute)
 
 	d.db = bun.NewDB(sqlDB, mysqldialect.New())
-	d.db.AddQueryHook(loggerHook.NewQueryHook(
-		loggerHook.WithLogger(d.logger),
-		loggerHook.WithDebug(d.config.MySQL.Debug),
-		loggerHook.WithSlowQueryThreshold(time.Duration(d.config.MySQL.SlowQueryThreshold)*time.Millisecond),
+	d.db.AddQueryHook(hook.NewLoggerQueryHook(
+		hook.WithLogger(d.logger),
+		hook.WithDebug(d.config.MySQL.Debug),
+		hook.WithSlowQueryThreshold(time.Duration(d.config.MySQL.SlowQueryThreshold)*time.Millisecond),
 	))
-	d.db.AddQueryHook(tracerHook.NewQueryHook())
+	d.db.AddQueryHook(hook.NewTracerQueryHook())
 
 	return nil
 }
