@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"goapptemp/internal/adapter/logger"
+	"goapptemp/pkg/logger"
 
 	"github.com/labstack/echo/v4"
 	"github.com/uptrace/bun"

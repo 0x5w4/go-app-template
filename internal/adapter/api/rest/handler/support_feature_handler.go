@@ -8,15 +8,25 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
 	"goapptemp/internal/domain/entity"
-	"goapptemp/internal/domain/service/supportfeature"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type SupportFeatureHandler struct {
+	properties
+}
+
+func NewSupportFeatureHandler(properties properties) *SupportFeatureHandler {
+	return &SupportFeatureHandler{
+		properties: properties,
+	}
+}
 
 type CreateSupportFeature struct {
 	Name     string `json:"name" validate:"required,min=2,max=32,alpha_space"`
@@ -54,7 +64,7 @@ type FilterSupportFeatureRequest struct {
 	PerPage  int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) CreateSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -67,7 +77,7 @@ func (h *Handler) CreateSupportFeature(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if err := h.validate.Struct(req); err != nil {
 		var validationErrors validator.ValidationErrors
@@ -79,7 +89,7 @@ func (h *Handler) CreateSupportFeature(c echo.Context) error {
 	}
 
 	supportFeature, err := h.service.SupportFeature().Create(ctx,
-		&supportfeature.CreateSupportFeatureRequest{
+		&service.CreateSupportFeatureRequest{
 			AuthParams: &authArg,
 			SupportFeature: &entity.SupportFeature{
 				Name:     strings.TrimSpace(req.SupportFeature.Name),
@@ -96,7 +106,7 @@ func (h *Handler) CreateSupportFeature(c echo.Context) error {
 	return response.Success(c, "Create help service success", data)
 }
 
-func (h *Handler) BulkCreateSupportFeatures(c echo.Context) error {
+func (h *SupportFeatureHandler) BulkCreateSupportFeatures(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -109,7 +119,7 @@ func (h *Handler) BulkCreateSupportFeatures(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if err := h.validate.Struct(req); err != nil {
 		var validationErrors validator.ValidationErrors
@@ -140,7 +150,7 @@ func (h *Handler) BulkCreateSupportFeatures(c echo.Context) error {
 	}
 
 	supportFeatures, err := h.service.SupportFeature().BulkCreate(ctx,
-		&supportfeature.BulkCreateSupportFeatureRequest{
+		&service.BulkCreateSupportFeatureRequest{
 			AuthParams:      &authArg,
 			SupportFeatures: sfs,
 		})
@@ -153,7 +163,7 @@ func (h *Handler) BulkCreateSupportFeatures(c echo.Context) error {
 	return response.Success(c, "Bulk create help service success", data)
 }
 
-func (h *Handler) FindSupportFeatures(c echo.Context) error {
+func (h *SupportFeatureHandler) FindSupportFeatures(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -166,7 +176,7 @@ func (h *Handler) FindSupportFeatures(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -188,7 +198,7 @@ func (h *Handler) FindSupportFeatures(c echo.Context) error {
 	}
 
 	supportFeatures, totalCount, err := h.service.SupportFeature().Find(ctx,
-		&supportfeature.FindSupportFeaturesRequest{
+		&service.FindSupportFeaturesRequest{
 			AuthParams: &authArg,
 			Filter: &mysql.FilterSupportFeaturePayload{
 				IDs:      req.IDs,
@@ -220,7 +230,7 @@ func (h *Handler) FindSupportFeatures(c echo.Context) error {
 	return response.Paginate(c, "Find help services success", list, pagination)
 }
 
-func (h *Handler) FindOneSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) FindOneSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -234,7 +244,7 @@ func (h *Handler) FindOneSupportFeature(c echo.Context) error {
 	}
 
 	supportFeature, err := h.service.SupportFeature().FindOne(ctx,
-		&supportfeature.FindOneSupportFeatureRequest{
+		&service.FindOneSupportFeatureRequest{
 			AuthParams:       &authArg,
 			SupportFeatureID: id,
 		})
@@ -247,7 +257,7 @@ func (h *Handler) FindOneSupportFeature(c echo.Context) error {
 	return response.Success(c, "Find one help service success", data)
 }
 
-func (h *Handler) UpdateSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) UpdateSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -260,7 +270,7 @@ func (h *Handler) UpdateSupportFeature(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -278,7 +288,7 @@ func (h *Handler) UpdateSupportFeature(c echo.Context) error {
 	}
 
 	supportFeature, err := h.service.SupportFeature().Update(ctx,
-		&supportfeature.UpdateSupportFeatureRequest{
+		&service.UpdateSupportFeatureRequest{
 			AuthParams: &authArg,
 			Update: &mysql.UpdateSupportFeaturePayload{
 				ID:       req.SupportFeature.ID,
@@ -296,7 +306,7 @@ func (h *Handler) UpdateSupportFeature(c echo.Context) error {
 	return response.Success(c, "Update help service success", data)
 }
 
-func (h *Handler) DeleteSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) DeleteSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -310,7 +320,7 @@ func (h *Handler) DeleteSupportFeature(c echo.Context) error {
 	}
 
 	err = h.service.SupportFeature().Delete(ctx,
-		&supportfeature.DeleteSupportFeatureRequest{
+		&service.DeleteSupportFeatureRequest{
 			AuthParams:       &authArg,
 			SupportFeatureID: id,
 		})
@@ -321,7 +331,7 @@ func (h *Handler) DeleteSupportFeature(c echo.Context) error {
 	return response.Success(c, "Delete help service success", nil)
 }
 
-func (h *Handler) IsSupportFeatureDeletable(c echo.Context) error {
+func (h *SupportFeatureHandler) IsSupportFeatureDeletable(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -335,7 +345,7 @@ func (h *Handler) IsSupportFeatureDeletable(c echo.Context) error {
 	}
 
 	isDeletable, err := h.service.SupportFeature().IsDeletable(ctx,
-		&supportfeature.IsDeletableSupportFeatureRequest{
+		&service.IsDeletableSupportFeatureRequest{
 			AuthParams:       &authArg,
 			SupportFeatureID: id,
 		})
@@ -350,7 +360,7 @@ func (h *Handler) IsSupportFeatureDeletable(c echo.Context) error {
 	return response.Success(c, "Check if help service is deletable success", &data{IsDeletable: isDeletable})
 }
 
-func (h *Handler) ImportPreviewSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) ImportPreviewSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -368,7 +378,7 @@ func (h *Handler) ImportPreviewSupportFeature(c echo.Context) error {
 	}
 
 	data, err := h.service.SupportFeature().ImportPreview(ctx,
-		&supportfeature.ImportPreviewSupportFeatureRequest{
+		&service.ImportPreviewSupportFeatureRequest{
 			AuthParams: &authArg,
 			File:       file,
 		})
@@ -379,7 +389,7 @@ func (h *Handler) ImportPreviewSupportFeature(c echo.Context) error {
 	return response.Success(c, "Import preview success", serializer.SerializeSupportFeaturePreviews(data))
 }
 
-func (h *Handler) TemplateImportSupportFeature(c echo.Context) error {
+func (h *SupportFeatureHandler) TemplateImportSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -388,7 +398,7 @@ func (h *Handler) TemplateImportSupportFeature(c echo.Context) error {
 	}
 
 	fileData, err := h.service.SupportFeature().TemplateImport(ctx,
-		&supportfeature.TemplateImportSupportFeatureRequest{
+		&service.TemplateImportSupportFeatureRequest{
 			AuthParams: &authArg,
 		})
 	if err != nil {

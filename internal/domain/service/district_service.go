@@ -1,0 +1,64 @@
+package service
+
+import (
+	"context"
+
+	"goapptemp/config"
+	repo "goapptemp/internal/adapter/repository"
+	"goapptemp/internal/adapter/repository/mysql"
+	"goapptemp/internal/domain/entity"
+	serror "goapptemp/internal/domain/service/error"
+	"goapptemp/internal/shared/exception"
+	"goapptemp/pkg/logger"
+)
+
+type DistrictService interface {
+	Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error)
+	FindOne(ctx context.Context, req *FindOneDistrictRequest) (*entity.District, error)
+}
+
+type districtService struct {
+	config *config.Config
+	repo   repo.Repository
+	log    logger.Logger
+	auth   AuthService
+}
+
+func NewDistrictService(config *config.Config, repo repo.Repository, log logger.Logger, auth AuthService) DistrictService {
+	return &districtService{
+		config: config,
+		repo:   repo,
+		log:    log,
+		auth:   auth,
+	}
+}
+
+type FindDistrictsRequest struct {
+	Filter *mysql.FilterDistrictPayload
+}
+
+type FindOneDistrictRequest struct {
+	DistrictID uint
+}
+
+func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error) {
+	districts, totalCount, err := s.repo.MySQL().District().Find(ctx, req.Filter)
+	if err != nil {
+		return nil, 0, serror.TranslateRepoError(err)
+	}
+
+	return districts, totalCount, nil
+}
+
+func (s *districtService) FindOne(ctx context.Context, req *FindOneDistrictRequest) (*entity.District, error) {
+	if req.DistrictID == 0 {
+		return nil, exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "District ID required for find one")
+	}
+
+	district, err := s.repo.MySQL().District().FindByID(ctx, req.DistrictID)
+	if err != nil {
+		return nil, serror.TranslateRepoError(err)
+	}
+
+	return district, nil
+}

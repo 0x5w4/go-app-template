@@ -5,19 +5,18 @@ import (
 	"database/sql"
 
 	"goapptemp/config"
-	"goapptemp/internal/adapter/logger"
-	"goapptemp/internal/adapter/repository/mysql/db"
 	"goapptemp/internal/adapter/repository/mysql/model"
+	"goapptemp/pkg/db"
+	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
-	"go.elastic.co/apm/v2"
 )
 
 type RepositoryAtomicCallback func(r MySQLRepository) error
 
 type MySQLRepository interface {
 	DB() *bun.DB
-	Atomic(ctx context.Context, cfg *config.Config, fn RepositoryAtomicCallback) error
+	Atomic(ctx context.Context, config *config.Config, fn RepositoryAtomicCallback) error
 	Close() error
 	StoreProcedure() StoreProcedureRepository
 	Client() ClientRepository
@@ -48,8 +47,8 @@ type mysqlRepository struct {
 	storeProcedureRepository       StoreProcedureRepository
 }
 
-func NewMySQLRepository(cfg *config.Config, logger logger.Logger, tracer *apm.Tracer) (MySQLRepository, error) {
-	db, err := db.NewBunDB(cfg, logger, tracer)
+func NewMySQLRepository(config *config.Config, logger logger.Logger) (MySQLRepository, error) {
+	db, err := db.NewBunDB(config, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +68,7 @@ func NewMySQLRepository(cfg *config.Config, logger logger.Logger, tracer *apm.Tr
 		(*model.User)(nil),
 	)
 
-	return create(cfg, db.DB(), logger), nil
+	return create(config, db.DB(), logger), nil
 }
 
 func (r *mysqlRepository) DB() *bun.DB {
@@ -86,12 +85,12 @@ func (r *mysqlRepository) Close() error {
 	return r.DB().Close()
 }
 
-func (r *mysqlRepository) Atomic(ctx context.Context, cfg *config.Config, fn RepositoryAtomicCallback) error {
+func (r *mysqlRepository) Atomic(ctx context.Context, config *config.Config, fn RepositoryAtomicCallback) error {
 	err := r.db.RunInTx(
 		ctx,
 		&sql.TxOptions{Isolation: sql.LevelSerializable},
 		func(ctx context.Context, tx bun.Tx) error {
-			return fn(create(cfg, tx, r.logger))
+			return fn(create(config, tx, r.logger))
 		},
 	)
 	if err != nil {
@@ -101,7 +100,7 @@ func (r *mysqlRepository) Atomic(ctx context.Context, cfg *config.Config, fn Rep
 	return nil
 }
 
-func create(cfg *config.Config, db bun.IDB, logger logger.Logger) MySQLRepository {
+func create(config *config.Config, db bun.IDB, logger logger.Logger) MySQLRepository {
 	return &mysqlRepository{
 		db:                             db,
 		logger:                         logger,
@@ -114,7 +113,7 @@ func create(cfg *config.Config, db bun.IDB, logger logger.Logger) MySQLRepositor
 		districtRepository:             NewDistrictRepository(db, logger),
 		companyRepository:              NewCompanyRepository(db, logger),
 		clientSupportFeatureRepository: NewClientSupportFeatureRepository(db, logger),
-		storeProcedureRepository:       NewStoreProcedureRepository(cfg.MySQL.DBName, db, logger),
+		storeProcedureRepository:       NewStoreProcedureRepository(config.MySQL.DBName, db, logger),
 		permissionRepository:           NewPermissionRepository(db, logger),
 	}
 }

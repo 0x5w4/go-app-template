@@ -2,10 +2,8 @@ package repository
 
 import (
 	"goapptemp/config"
-	"goapptemp/internal/adapter/logger"
 	"goapptemp/internal/adapter/repository/mysql"
-
-	"go.elastic.co/apm/v2"
+	"goapptemp/pkg/logger"
 )
 
 type Repository interface {
@@ -21,8 +19,8 @@ func (r *repository) MySQL() mysql.MySQLRepository {
 	return r.mysql
 }
 
-func NewRepository(config *config.Config, logger logger.Logger, tracer *apm.Tracer) (Repository, error) {
-	mysqlRepo, err := mysql.NewMySQLRepository(config, logger, tracer)
+func NewRepository(config *config.Config, logger logger.Logger) (Repository, error) {
+	mysqlRepo, err := mysql.NewMySQLRepository(config, logger)
 	if err != nil {
 		return nil, err
 	}

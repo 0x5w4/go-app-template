@@ -54,19 +54,6 @@ func transformDBIdentifier(tableName, identifier string) string {
 		processedName = strings.TrimPrefix(processedName, "company_")
 	}
 
-	if tableName == "profiles" && strings.HasPrefix(processedName, "company_") {
-		// Special case for client code to avoid confusion with 'company' field
-		processedName = strings.TrimPrefix(processedName, "company_")
-	}
-
-	if tableName == "acquirers" && strings.HasPrefix(processedName, "issuer_") {
-		processedName = strings.TrimPrefix(processedName, "issuer_")
-	}
-
-	if tableName == "main_features" && strings.HasPrefix(processedName, "acquirer_") {
-		processedName = strings.TrimPrefix(processedName, "acquirer_")
-	}
-
 	return processedName
 }
 

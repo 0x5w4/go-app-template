@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"goapptemp/internal/adapter/util"
+	"goapptemp/internal/shared"
 )
 
 type User struct {
@@ -13,11 +13,11 @@ type User struct {
 	Username  string
 	Email     string
 	Password  string
-	Token     *string
+	Token     *Token
 }
 
 func (e *User) SetPassword(password string) error {
-	hashedPassword, err := util.HashPassword(password)
+	hashedPassword, err := shared.HashPassword(password)
 	if err != nil {
 		return err
 	}

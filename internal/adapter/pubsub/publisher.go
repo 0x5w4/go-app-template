@@ -2,10 +2,13 @@ package pubsub
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"goapptemp/pkg/logger"
+	pubsubClient "goapptemp/pkg/pubsub"
+
 	"cloud.google.com/go/pubsub"
+	cerrors "github.com/cockroachdb/errors"
 )
 
 type Publisher interface {
@@ -13,36 +16,23 @@ type Publisher interface {
 }
 
 type publisher struct {
-	client *pubsub.Client
+	logger logger.Logger
 	topic  *pubsub.Topic
 }
 
-type CommandMessage struct {
-	Command string          `json:"command"`
-	Payload string          `json:"payload"`
-	ID      uint            `json:"id"`
-	Detail  string          `json:"detail"`
-	Message *pubsub.Message `json:"-"`
-}
-
-func NewPublisher(ctx context.Context, client *pubsub.Client, topicID string) (Publisher, error) {
-	topic := client.Topic(topicID)
-
-	exists, err := topic.Exists(ctx)
+func NewPublisher(logger logger.Logger, pubsub pubsubClient.Pubsub, topicID string) (Publisher, error) {
+	topic, err := pubsub.NewPublisher(context.Background(), topicID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if topic exists: %w", err)
-	}
-
-	if !exists {
-		return nil, fmt.Errorf("topic %q does not exist", topicID)
+		return nil, err
 	}
 
 	return &publisher{
-		client: client,
+		logger: logger,
 		topic:  topic,
 	}, nil
 }
 
+// TODO: add log hook for success and failure
 func (p *publisher) Publish(ctx context.Context, data []byte, attributes map[string]string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -54,7 +44,7 @@ func (p *publisher) Publish(ctx context.Context, data []byte, attributes map[str
 
 	id, err := result.Get(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to publish message: %w", err)
+		return "", cerrors.Errorf("failed to publish message: %w", err)
 	}
 
 	return id, nil

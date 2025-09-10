@@ -4,15 +4,25 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
 	"goapptemp/internal/domain/entity"
-	"goapptemp/internal/domain/service/user"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type UserHandler struct {
+	properties
+}
+
+func NewUserHandler(properties properties) *UserHandler {
+	return &UserHandler{
+		properties: properties,
+	}
+}
 
 type CreateUser struct {
 	RoleIDs  []uint `json:"role_ids" validate:"required,dive,required,gt=0"`
@@ -48,7 +58,7 @@ type FilterUserRequest struct {
 	PerPage   int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) CreateUser(c echo.Context) error {
+func (h *UserHandler) CreateUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -61,7 +71,7 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if err := h.validate.Struct(req); err != nil {
 		var validationErrors validator.ValidationErrors
@@ -72,7 +82,7 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Request validation failed")
 	}
 
-	user, err := h.service.User().Create(ctx, &user.CreateUserRequest{
+	user, err := h.service.User().Create(ctx, &service.CreateUserRequest{
 		AuthParams: &authArg,
 		User: &entity.User{
 			RoleIDs:  req.User.RoleIDs,
@@ -91,7 +101,7 @@ func (h *Handler) CreateUser(c echo.Context) error {
 	return response.Success(c, "Create user success", data)
 }
 
-func (h *Handler) FindUsers(c echo.Context) error {
+func (h *UserHandler) FindUsers(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -104,7 +114,7 @@ func (h *Handler) FindUsers(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -126,7 +136,7 @@ func (h *Handler) FindUsers(c echo.Context) error {
 	}
 
 	users, totalCount, err := h.service.User().Find(ctx,
-		&user.FindUserRequest{
+		&service.FindUserRequest{
 			AuthParams: &authArg,
 			UserFilter: &mysql.FilterUserPayload{
 				IDs:       req.IDs,
@@ -156,7 +166,7 @@ func (h *Handler) FindUsers(c echo.Context) error {
 	return response.Paginate(c, "Find users success", list, pagination)
 }
 
-func (h *Handler) FindOneUser(c echo.Context) error {
+func (h *UserHandler) FindOneUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -170,7 +180,7 @@ func (h *Handler) FindOneUser(c echo.Context) error {
 	}
 
 	user, err := h.service.User().FindOne(ctx,
-		&user.FindOneUserRequest{
+		&service.FindOneUserRequest{
 			AuthParams: &authArg,
 			UserID:     id,
 		})
@@ -183,7 +193,7 @@ func (h *Handler) FindOneUser(c echo.Context) error {
 	return response.Success(c, "Find user success", data)
 }
 
-func (h *Handler) UpdateUser(c echo.Context) error {
+func (h *UserHandler) UpdateUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -196,7 +206,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -214,7 +224,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	}
 
 	user, err := h.service.User().Update(ctx,
-		&user.UpdateUserRequest{
+		&service.UpdateUserRequest{
 			AuthParams: &authArg,
 			Update: &mysql.UpdateUserPayload{
 				ID:       req.User.ID,
@@ -234,7 +244,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	return response.Success(c, "Update user success", data)
 }
 
-func (h *Handler) DeleteUser(c echo.Context) error {
+func (h *UserHandler) DeleteUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -248,7 +258,7 @@ func (h *Handler) DeleteUser(c echo.Context) error {
 	}
 
 	err = h.service.User().Delete(ctx,
-		&user.DeleteUserRequest{
+		&service.DeleteUserRequest{
 			AuthParams: &authArg,
 			UserID:     id,
 		})

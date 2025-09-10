@@ -4,14 +4,24 @@ import (
 	"strconv"
 
 	"goapptemp/internal/adapter/api/rest/response"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
-	"goapptemp/internal/domain/service/webhook"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type WebhookHandler struct {
+	properties
+}
+
+func NewWebhookHandler(properties properties) *WebhookHandler {
+	return &WebhookHandler{
+		properties: properties,
+	}
+}
 
 type UpdateIconRequest struct {
 	ID   uint   `query:"id" validate:"required,gt=0"`
@@ -19,7 +29,7 @@ type UpdateIconRequest struct {
 	Link string `json:"link" validate:"required,url"`
 }
 
-func (h *Handler) UpdateIcon(c echo.Context) error {
+func (h *WebhookHandler) UpdateIcon(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(UpdateIconRequest)
@@ -27,7 +37,7 @@ func (h *Handler) UpdateIcon(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	idStr := c.QueryParam("id")
 	if idStr == "" {
@@ -58,7 +68,7 @@ func (h *Handler) UpdateIcon(c echo.Context) error {
 		Field("link_present", req.Link != "").
 		Msg("Webhook UpdateIcon request received and validated")
 
-	err = h.service.Webhook().UpdateIcon(ctx, &webhook.UpdateIconRequest{
+	err = h.service.Webhook().UpdateIcon(ctx, &service.UpdateIconRequest{
 		ID:   req.ID,
 		Link: req.Link,
 		Type: req.Type,

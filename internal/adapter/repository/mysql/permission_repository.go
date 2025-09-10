@@ -2,9 +2,9 @@ package mysql
 
 import (
 	"context"
-	"goapptemp/internal/adapter/logger"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
 )

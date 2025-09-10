@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"goapptemp/internal/adapter/logger"
+	"goapptemp/pkg/logger"
 	"strconv"
 	"strings"
 

@@ -10,26 +10,27 @@ import (
 	"time"
 
 	"goapptemp/config"
-	restServer "goapptemp/internal/adapter/api/rest/server"
-	"goapptemp/internal/adapter/elastic/tracer"
-	"goapptemp/internal/adapter/logger"
+	"goapptemp/internal/adapter/api/rest"
 	"goapptemp/internal/adapter/pubsub"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql/db"
 	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared/token"
+	"goapptemp/pkg/db"
+	"goapptemp/pkg/logger"
+	pubsubClient "goapptemp/pkg/pubsub"
+	"goapptemp/pkg/tracer"
 )
 
 type App struct {
-	cfg        *config.Config
-	restServer restServer.Server
+	config     *config.Config
+	restServer rest.Server
 	logger     logger.Logger
 	tracer     tracer.Tracer
-	service    service.Service
-	pubsub     pubsub.Pubsub
+	pubsub     pubsubClient.Pubsub
 }
 
-func NewApp(cfg *config.Config, logger logger.Logger) (*App, error) {
-	if cfg == nil {
+func NewApp(config *config.Config, logger logger.Logger) (*App, error) {
+	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil")
 	}
 
@@ -38,7 +39,7 @@ func NewApp(cfg *config.Config, logger logger.Logger) (*App, error) {
 	}
 
 	return &App{
-		cfg:    cfg,
+		config: config,
 		logger: logger,
 	}, nil
 }
@@ -48,33 +49,53 @@ func (a *App) Run() error {
 	defer cancel()
 
 	var wg sync.WaitGroup
-
 	var err error
 
-	a.tracer, err = tracer.InitTracer(&tracer.Config{
-		ServiceName:    a.cfg.Tracer.ServiceName,
-		ServiceVersion: a.cfg.Tracer.ServiceVersion,
-		ServerURL:      a.cfg.Tracer.ServerURL,
-		SecretToken:    a.cfg.Tracer.SecretToken,
-		Environment:    a.cfg.Tracer.Environment,
+	// Initialize tracer
+	a.tracer, err = tracer.NewApmTracer(&tracer.Config{
+		ServiceName:    a.config.Tracer.ServiceName,
+		ServiceVersion: a.config.Tracer.ServiceVersion,
+		ServerURL:      a.config.Tracer.ServerURL,
+		SecretToken:    a.config.Tracer.SecretToken,
+		Environment:    a.config.Tracer.Environment,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize tracer: %w", err)
 	}
 
-	repo, err := repository.NewRepository(a.cfg, a.logger, a.tracer.Tracer())
+	// Initialize repository
+	repo, err := repository.NewRepository(a.config, a.logger)
 	if err != nil {
 		return fmt.Errorf("failed to setup repository: %w", err)
 	}
 
-	if a.cfg.App.UsePubsub {
-		a.pubsub, err = pubsub.NewPubSubClient(ctx, a.cfg.Pubsub.ProjectID, a.cfg.Pubsub.CredFile, a.cfg.Pubsub.TopicID)
+	// Initialize pubsub
+	var publisher pubsub.Publisher
+	if a.config.App.UsePubsub {
+		a.pubsub, err = pubsubClient.NewPubsub(ctx, a.config.Pubsub.ProjectID, a.config.Pubsub.CredFile)
 		if err != nil {
-			return fmt.Errorf("failed to setup pubsub: %w", err)
+			return fmt.Errorf("failed to setup pubsub client: %w", err)
+		}
+
+		publisher, err = pubsub.NewPublisher(a.logger, a.pubsub, a.config.Pubsub.TopicID)
+		if err != nil {
+			return fmt.Errorf("failed to setup pubsub publisher: %w", err)
 		}
 	}
 
-	a.service, err = service.NewService(a.cfg, repo, a.logger, a.pubsub)
+	// Initialize token
+	token, err := token.NewJwtToken(
+		a.config.Token.AccessSecretKey,
+		a.config.Token.RefreshSecretKey,
+		time.Duration(int(a.config.Token.AccessTokenDuration))*time.Minute,
+		time.Duration(int(a.config.Token.RefreshTokenDuration))*time.Minute,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create token manager: %w", err)
+	}
+
+	// Initialize service
+	service, err := service.NewService(a.config, repo, a.logger, token, publisher)
 	if err != nil {
 		return fmt.Errorf("failed to setup service: %w", err)
 	}
@@ -83,10 +104,11 @@ func (a *App) Run() error {
 
 	go func() {
 		defer wg.Done()
-		a.service.StaleTaskDetector().Start(ctx)
+		service.StaleTaskDetector().Start(ctx)
 	}()
 
-	a.restServer, err = restServer.NewServer(a.cfg, a.logger, a.service, repo, a.tracer)
+	// Initialize and start REST server
+	a.restServer, err = rest.NewEchoServer(a.config, a.logger, token, service, repo)
 	if err != nil {
 		return fmt.Errorf("failed to setup server: %w", err)
 	}
@@ -94,29 +116,35 @@ func (a *App) Run() error {
 	if err := a.restServer.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+	a.logger.Info().Msgf("Server started at %s:%d", a.config.HTTP.Host, a.config.HTTP.Port)
 
+	// Wait for shutdown signal
 	<-ctx.Done()
 	a.logger.Info().Msg("Shutdown signal received, starting graceful shutdown...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
 
+	// Shutdown REST server
 	if err := a.restServer.Shutdown(shutdownCtx); err != nil {
 		a.logger.Error().Err(err).Msg("Failed to gracefully shutdown REST server")
 	} else {
 		a.logger.Info().Msg("REST server shut down gracefully")
 	}
 
+	// Wait for background tasks to finish
 	a.logger.Info().Msg("Waiting for background tasks to finish...")
 	wg.Wait()
 	a.logger.Info().Msg("All background tasks finished")
 
+	// Close repository
 	if err := repo.Close(); err != nil {
 		a.logger.Error().Err(err).Msg("Failed to gracefully close repository")
 	} else {
 		a.logger.Info().Msg("Repository closed gracefully")
 	}
 
+	// Shutdown pubsub client
 	if a.pubsub != nil {
 		if err := a.pubsub.Shutdown(); err != nil {
 			a.logger.Error().Err(err).Msg("Failed to gracefully shutdown PubSub client")
@@ -131,7 +159,7 @@ func (a *App) Run() error {
 }
 
 func (a *App) Migrate(reset bool) error {
-	db, err := db.NewBunDB(a.cfg, a.logger, nil)
+	db, err := db.NewBunDB(a.config, a.logger)
 	if err != nil {
 		return err
 	}

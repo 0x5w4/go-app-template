@@ -4,15 +4,25 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
 	"goapptemp/internal/domain/entity"
-	"goapptemp/internal/domain/service/role"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type RoleHandler struct {
+	properties
+}
+
+func NewRoleHandler(properties properties) *RoleHandler {
+	return &RoleHandler{
+		properties: properties,
+	}
+}
 
 type CreateRole struct {
 	PermissionIDs []uint  `json:"permission_ids" validate:"required,dive,required,gt=0"`
@@ -49,7 +59,7 @@ type FilterRoleRequest struct {
 	PerPage    int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) CreateRole(c echo.Context) error {
+func (h *RoleHandler) CreateRole(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -62,7 +72,7 @@ func (h *Handler) CreateRole(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if err := h.validate.Struct(req); err != nil {
 		var validationErrors validator.ValidationErrors
@@ -74,7 +84,7 @@ func (h *Handler) CreateRole(c echo.Context) error {
 	}
 
 	role, err := h.service.Role().Create(ctx,
-		&role.CreateRoleRequest{
+		&service.CreateRoleRequest{
 			AuthParams: &authArg,
 			Role: &entity.Role{
 				PermissionIDs: req.Role.PermissionIDs,
@@ -93,7 +103,7 @@ func (h *Handler) CreateRole(c echo.Context) error {
 	return response.Success(c, "Create role success", data)
 }
 
-func (h *Handler) FindRoles(c echo.Context) error {
+func (h *RoleHandler) FindRoles(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -106,7 +116,7 @@ func (h *Handler) FindRoles(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -128,7 +138,7 @@ func (h *Handler) FindRoles(c echo.Context) error {
 	}
 
 	roles, totalCount, err := h.service.Role().Find(ctx,
-		&role.FindRolesRequest{
+		&service.FindRolesRequest{
 			AuthParams: &authArg,
 			Filter: &mysql.FilterRolePayload{
 				IDs:        req.IDs,
@@ -159,7 +169,7 @@ func (h *Handler) FindRoles(c echo.Context) error {
 	return response.Paginate(c, "Find roles success", list, pagination)
 }
 
-func (h *Handler) FindOneRole(c echo.Context) error {
+func (h *RoleHandler) FindOneRole(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -173,7 +183,7 @@ func (h *Handler) FindOneRole(c echo.Context) error {
 	}
 
 	role, err := h.service.Role().FindOne(ctx,
-		&role.FindOneRoleRequest{
+		&service.FindOneRoleRequest{
 			AuthParams: &authArg,
 			RoleID:     id,
 		})
@@ -186,7 +196,7 @@ func (h *Handler) FindOneRole(c echo.Context) error {
 	return response.Success(c, "Find role success", data)
 }
 
-func (h *Handler) UpdateRole(c echo.Context) error {
+func (h *RoleHandler) UpdateRole(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -199,7 +209,7 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind data")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -217,7 +227,7 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 	}
 
 	role, err := h.service.Role().Update(ctx,
-		&role.UpdateRoleRequest{
+		&service.UpdateRoleRequest{
 			AuthParams: &authArg,
 			Update: &mysql.UpdateRolePayload{
 				ID:            req.Role.ID,
@@ -237,7 +247,7 @@ func (h *Handler) UpdateRole(c echo.Context) error {
 	return response.Success(c, "Update role success", data)
 }
 
-func (h *Handler) DeleteRole(c echo.Context) error {
+func (h *RoleHandler) DeleteRole(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	authArg, err := getAuthArg(c)
@@ -251,7 +261,7 @@ func (h *Handler) DeleteRole(c echo.Context) error {
 	}
 
 	err = h.service.Role().Delete(ctx,
-		&role.DeleteRoleRequest{
+		&service.DeleteRoleRequest{
 			AuthParams: &authArg,
 			RoleID:     id,
 		})

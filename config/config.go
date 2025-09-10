@@ -54,8 +54,10 @@ type HTTPConfig struct {
 }
 
 type TokenConfig struct {
-	SecretKey  string
-	ExpireTime int
+	AccessSecretKey      string
+	AccessTokenDuration  int // in minutes
+	RefreshSecretKey     string
+	RefreshTokenDuration int // in minutes
 }
 
 type PubsubConfig struct {
@@ -122,8 +124,10 @@ func LoadConfig(envPath string) (*Config, error) {
 			Debug:              viper.GetBool("MYSQL_DEBUG"),
 		},
 		Token: &TokenConfig{
-			SecretKey:  viper.GetString("TOKEN_SECRET_KEY"),
-			ExpireTime: viper.GetInt("TOKEN_EXPIRE_TIME"),
+			AccessSecretKey:      viper.GetString("ACCESS_TOKEN_SECRET_KEY"),
+			AccessTokenDuration:  viper.GetInt("ACCESS_TOKEN_DURATION"),
+			RefreshSecretKey:     viper.GetString("REFRESH_TOKEN_SECRET_KEY"),
+			RefreshTokenDuration: viper.GetInt("REFRESH_TOKEN_DURATION"),
 		},
 		Pubsub: &PubsubConfig{
 			ProjectID: viper.GetString("PUBSUB_PROJECT_ID"),

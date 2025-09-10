@@ -4,14 +4,24 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
-	"goapptemp/internal/domain/service/province"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type ProvinceHandler struct {
+	properties
+}
+
+func NewProvinceHandler(properties properties) *ProvinceHandler {
+	return &ProvinceHandler{
+		properties: properties,
+	}
+}
 
 type FilterProvinceRequest struct {
 	IDs     []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
@@ -21,7 +31,7 @@ type FilterProvinceRequest struct {
 	PerPage int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) FindProvinces(c echo.Context) error {
+func (h *ProvinceHandler) FindProvinces(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(FilterProvinceRequest)
@@ -29,7 +39,7 @@ func (h *Handler) FindProvinces(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -50,7 +60,7 @@ func (h *Handler) FindProvinces(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Invalid query parameters")
 	}
 
-	provinces, totalCount, err := h.service.Province().Find(ctx, &province.FindProvincesRequest{
+	provinces, totalCount, err := h.service.Province().Find(ctx, &service.FindProvincesRequest{
 		Filter: &mysql.FilterProvincePayload{
 			IDs:     req.IDs,
 			Names:   req.Names,
@@ -78,7 +88,7 @@ func (h *Handler) FindProvinces(c echo.Context) error {
 	return response.Paginate(c, "Find provinces success", list, pagination)
 }
 
-func (h *Handler) FindOneProvince(c echo.Context) error {
+func (h *ProvinceHandler) FindOneProvince(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	id, err := parseUintParam(c, "id")
@@ -86,7 +96,7 @@ func (h *Handler) FindOneProvince(c echo.Context) error {
 		return err
 	}
 
-	province, err := h.service.Province().FindOne(ctx, &province.FindOneProvinceRequest{ProvinceID: id})
+	province, err := h.service.Province().FindOne(ctx, &service.FindOneProvinceRequest{ProvinceID: id})
 	if err != nil {
 		return err
 	}

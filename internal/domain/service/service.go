@@ -1,81 +1,69 @@
 package service
 
 import (
-	"time"
-
 	"goapptemp/config"
-	"goapptemp/internal/adapter/logger"
 	"goapptemp/internal/adapter/pubsub"
-	repo "goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/token"
-	"goapptemp/internal/domain/service/auth"
-	"goapptemp/internal/domain/service/city"
-	"goapptemp/internal/domain/service/client"
-	"goapptemp/internal/domain/service/district"
-	"goapptemp/internal/domain/service/province"
-	pubsubService "goapptemp/internal/domain/service/pubsub"
-	"goapptemp/internal/domain/service/role"
-	"goapptemp/internal/domain/service/staletask"
-	"goapptemp/internal/domain/service/supportfeature"
-	"goapptemp/internal/domain/service/user"
-	"goapptemp/internal/domain/service/webhook"
+	"goapptemp/internal/adapter/repository"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/token"
+	"goapptemp/pkg/logger"
 )
 
 type Service interface {
 	Token() token.Token
-	Auth() auth.AuthService
-	User() user.UserService
-	Client() client.ClientService
-	Role() role.RoleService
-	SupportFeature() supportfeature.SupportFeatureService
-	Province() province.ProvinceService
-	City() city.CityService
-	District() district.DistrictService
-	Webhook() webhook.WebhookService
-	StaleTaskDetector() staletask.StaleTaskDetector
+	Auth() AuthService
+	User() UserService
+	Client() ClientService
+	Role() RoleService
+	SupportFeature() SupportFeatureService
+	Province() ProvinceService
+	City() CityService
+	District() DistrictService
+	Webhook() WebhookService
+	StaleTaskDetector() StaleTaskDetector
 }
 
 type services struct {
 	tokenManager          token.Token
-	authService           auth.AuthService
-	userService           user.UserService
-	clientService         client.ClientService
-	roleService           role.RoleService
-	supportFeatureService supportfeature.SupportFeatureService
-	webhookService        webhook.WebhookService
-	provinceService       province.ProvinceService
-	cityService           city.CityService
-	districtService       district.DistrictService
-	staleTaskDetector     staletask.StaleTaskDetector
+	authService           AuthService
+	userService           UserService
+	clientService         ClientService
+	roleService           RoleService
+	supportFeatureService SupportFeatureService
+	webhookService        WebhookService
+	provinceService       ProvinceService
+	cityService           CityService
+	districtService       DistrictService
+	staleTaskDetector     StaleTaskDetector
 }
 
-func NewService(cfg *config.Config, repo repo.Repository, logger logger.Logger, pubsub pubsub.Pubsub) (Service, error) {
-	tokenManager, err := token.NewJWTManager(cfg.Token.SecretKey, time.Duration(cfg.Token.ExpireTime)*time.Second)
+func NewService(
+	config *config.Config,
+	repo repository.Repository,
+	logger logger.Logger,
+	token token.Token,
+	publisher pubsub.Publisher,
+) (Service, error) {
+
+	validate, err := shared.NewValidator()
 	if err != nil {
 		return nil, err
 	}
 
-	validate, err := util.SetupValidator()
-	if err != nil {
-		return nil, err
-	}
-
-	pubsubService := pubsubService.NewPubsubService(cfg, logger, pubsub)
-	authService := auth.NewAuthService(cfg, tokenManager, repo, logger)
+	pubsubService := NewPubsubService(config, logger, publisher)
+	authService := NewAuthService(config, token, repo, logger)
 
 	return &services{
-		tokenManager:          tokenManager,
 		authService:           authService,
-		userService:           user.NewUserService(cfg, repo, logger, authService),
-		clientService:         client.NewClientService(cfg, repo, logger, authService, pubsubService),
-		roleService:           role.NewRoleService(cfg, repo, logger, authService),
-		supportFeatureService: supportfeature.NewSupportFeatureService(cfg, repo, logger, authService, validate),
-		provinceService:       province.NewProvinceService(cfg, repo, logger, authService),
-		cityService:           city.NewCityService(cfg, repo, logger, authService),
-		districtService:       district.NewDistrictService(cfg, repo, logger, authService),
-		staleTaskDetector:     staletask.NewStaleTaskDetector(cfg, repo, logger),
-		webhookService:        webhook.NewWebhookService(cfg, repo, logger),
+		userService:           NewUserService(config, repo, logger, authService),
+		clientService:         NewClientService(config, repo, logger, authService, pubsubService),
+		roleService:           NewRoleService(config, repo, logger, authService),
+		supportFeatureService: NewSupportFeatureService(config, repo, logger, authService, validate),
+		provinceService:       NewProvinceService(config, repo, logger, authService),
+		cityService:           NewCityService(config, repo, logger, authService),
+		districtService:       NewDistrictService(config, repo, logger, authService),
+		staleTaskDetector:     NewStaleTaskDetector(config, repo, logger),
+		webhookService:        NewWebhookService(config, repo, logger),
 	}, nil
 }
 
@@ -83,42 +71,42 @@ func (s *services) Token() token.Token {
 	return s.tokenManager
 }
 
-func (s *services) Auth() auth.AuthService {
+func (s *services) Auth() AuthService {
 	return s.authService
 }
 
-func (s *services) User() user.UserService {
+func (s *services) User() UserService {
 	return s.userService
 }
 
-func (s *services) Client() client.ClientService {
+func (s *services) Client() ClientService {
 	return s.clientService
 }
 
-func (s *services) Role() role.RoleService {
+func (s *services) Role() RoleService {
 	return s.roleService
 }
 
-func (s *services) SupportFeature() supportfeature.SupportFeatureService {
+func (s *services) SupportFeature() SupportFeatureService {
 	return s.supportFeatureService
 }
 
-func (s *services) Province() province.ProvinceService {
+func (s *services) Province() ProvinceService {
 	return s.provinceService
 }
 
-func (s *services) City() city.CityService {
+func (s *services) City() CityService {
 	return s.cityService
 }
 
-func (s *services) District() district.DistrictService {
+func (s *services) District() DistrictService {
 	return s.districtService
 }
 
-func (s *services) Webhook() webhook.WebhookService {
+func (s *services) Webhook() WebhookService {
 	return s.webhookService
 }
 
-func (s *services) StaleTaskDetector() staletask.StaleTaskDetector {
+func (s *services) StaleTaskDetector() StaleTaskDetector {
 	return s.staleTaskDetector
 }

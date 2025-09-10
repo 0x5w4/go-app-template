@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
-	app "goapptemp/cmd/app"
-	config "goapptemp/config"
-	logger "goapptemp/internal/adapter/logger"
+	"goapptemp/cmd/app"
+	"goapptemp/config"
+	"goapptemp/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +31,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run the goapptemp service",
 	Run: func(cmd *cobra.Command, _ []string) {
-		cfgFile, err := cmd.Flags().GetString("config")
+		configFile, err := cmd.Flags().GetString("config")
 		if err != nil {
 			fmt.Println("Failed to get config flag:", err)
 			os.Exit(1)
@@ -51,16 +51,16 @@ var runCmd = &cobra.Command{
 
 		logger := logger.NewZerologLogger(debug)
 
-		cfg, err := config.LoadConfig(cfgFile)
+		config, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Println("Failed to load config:", err)
 			os.Exit(1)
 		}
 
-		cfg.App.Environment = env
-		cfg.App.Debug = debug
+		config.App.Environment = env
+		config.App.Debug = debug
 
-		app, err := app.NewApp(cfg, logger)
+		app, err := app.NewApp(config, logger)
 		if err != nil {
 			fmt.Println("Failed to create app:", err)
 			os.Exit(1)
@@ -77,7 +77,7 @@ var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Run database migrations",
 	Run: func(cmd *cobra.Command, _ []string) {
-		cfgFile, err := cmd.Flags().GetString("config")
+		configFile, err := cmd.Flags().GetString("config")
 		if err != nil {
 			fmt.Println("Failed to get config flag:", err)
 			os.Exit(1)
@@ -91,13 +91,13 @@ var migrateCmd = &cobra.Command{
 
 		logger := logger.NewZerologLogger(true)
 
-		cfg, err := config.LoadConfig(cfgFile)
+		config, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Println("Failed to load config:", err)
 			os.Exit(1)
 		}
 
-		app, err := app.NewApp(cfg, logger)
+		app, err := app.NewApp(config, logger)
 		if err != nil {
 			fmt.Println("Failed to create app:", err)
 			os.Exit(1)

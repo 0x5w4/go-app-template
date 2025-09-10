@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"goapptemp/internal/adapter/util/constant"
-	"goapptemp/internal/adapter/util/exception"
-	"goapptemp/internal/domain/service/auth"
+	"goapptemp/constant"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/labstack/echo/v4"
 )
@@ -31,15 +31,15 @@ func parseUintParam(c echo.Context, paramName string) (uint, error) {
 	return uint(id), nil
 }
 
-func getAuthArg(c echo.Context) (auth.AuthParams, error) {
+func getAuthArg(c echo.Context) (service.AuthParams, error) {
 	arg := c.Get(constant.AuthPayloadCtxKey)
 	if arg == nil {
-		return auth.AuthParams{}, exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderMissing, "no authorization arguments provided")
+		return service.AuthParams{}, exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderMissing, "no authorization arguments provided")
 	}
 
-	authArg, ok := arg.(auth.AuthParams)
+	authArg, ok := arg.(service.AuthParams)
 	if !ok {
-		return auth.AuthParams{}, exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderInvalid, "Invalid authorization arguments")
+		return service.AuthParams{}, exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderInvalid, "Invalid authorization arguments")
 	}
 
 	return authArg, nil

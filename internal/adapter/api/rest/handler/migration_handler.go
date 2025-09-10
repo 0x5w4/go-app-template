@@ -10,23 +10,18 @@ import (
 	"runtime"
 	"strconv"
 
-	"goapptemp/config"
-	"goapptemp/internal/adapter/logger"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/labstack/echo/v4"
 )
 
 type MigrationHandler struct {
-	config *config.Config
-	logger logger.Logger
+	properties
 }
 
-func NewMigrationHandler(cfg *config.Config, logger logger.Logger) (*MigrationHandler, error) {
+func NewMigrationHandler(properties properties) *MigrationHandler {
 	return &MigrationHandler{
-		config: cfg,
-		logger: logger,
-	}, nil
+		properties: properties,
+	}
 }
 
 func (h *MigrationHandler) GetVersion(c echo.Context) error {
@@ -35,7 +30,7 @@ func (h *MigrationHandler) GetVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -79,7 +74,7 @@ func (h *MigrationHandler) ForceVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -128,7 +123,7 @@ func (h *MigrationHandler) Up(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -157,7 +152,7 @@ func (h *MigrationHandler) Down(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})

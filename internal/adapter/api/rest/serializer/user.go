@@ -12,7 +12,7 @@ type UserResponseData struct {
 	Email     string              `json:"email"`
 	Username  string              `json:"username"`
 	Fullname  string              `json:"fullname"`
-	Token     *string             `json:"token,omitempty"`
+	Token     *TokenResponseData  `json:"token,omitempty"`
 	CreatedAt string              `json:"created_at,omitempty"`
 	UpdatedAt string              `json:"updated_at,omitempty"`
 }
@@ -31,7 +31,7 @@ func SerializeUser(arg *entity.User) *UserResponseData {
 		Fullname:  arg.Fullname,
 		CreatedAt: arg.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: arg.UpdatedAt.Format(time.RFC3339),
-		Token:     arg.Token,
+		Token:     SerializeToken(arg.Token),
 	}
 }
 

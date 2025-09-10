@@ -4,14 +4,24 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
-	"goapptemp/internal/domain/service/city"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type CityHandler struct {
+	properties
+}
+
+func NewCityHandler(properties properties) *CityHandler {
+	return &CityHandler{
+		properties: properties,
+	}
+}
 
 type FilterCityRequest struct {
 	IDs         []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
@@ -22,7 +32,7 @@ type FilterCityRequest struct {
 	PerPage     int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) FindCities(c echo.Context) error {
+func (h *CityHandler) FindCities(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(FilterCityRequest)
@@ -30,7 +40,7 @@ func (h *Handler) FindCities(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -51,7 +61,7 @@ func (h *Handler) FindCities(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Invalid query parameters")
 	}
 
-	cities, totalCount, err := h.service.City().Find(ctx, &city.FindCitiesRequest{
+	cities, totalCount, err := h.service.City().Find(ctx, &service.FindCitiesRequest{
 		Filter: &mysql.FilterCityPayload{
 			IDs:         req.IDs,
 			ProvinceIDs: req.ProvinceIDs,
@@ -80,7 +90,7 @@ func (h *Handler) FindCities(c echo.Context) error {
 	return response.Paginate(c, "Find cities success", list, pagination)
 }
 
-func (h *Handler) FindOneCity(c echo.Context) error {
+func (h *CityHandler) FindOneCity(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	id, err := parseUintParam(c, "id")
@@ -88,7 +98,7 @@ func (h *Handler) FindOneCity(c echo.Context) error {
 		return err
 	}
 
-	city, err := h.service.City().FindOne(ctx, &city.FindOneCityRequest{CityID: id})
+	city, err := h.service.City().FindOne(ctx, &service.FindOneCityRequest{CityID: id})
 	if err != nil {
 		return err
 	}

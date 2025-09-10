@@ -4,14 +4,24 @@ import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util"
-	"goapptemp/internal/adapter/util/exception"
-	"goapptemp/internal/domain/service/district"
+	"goapptemp/internal/domain/service"
+	"goapptemp/internal/shared"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
+
+type DistrictHandler struct {
+	properties
+}
+
+func NewDistrictHandler(properties properties) *DistrictHandler {
+	return &DistrictHandler{
+		properties: properties,
+	}
+}
 
 type FilterDistrictRequest struct {
 	IDs     []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
@@ -22,7 +32,7 @@ type FilterDistrictRequest struct {
 	PerPage int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
-func (h *Handler) FindDistricts(c echo.Context) error {
+func (h *DistrictHandler) FindDistricts(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	req := new(FilterDistrictRequest)
@@ -30,7 +40,7 @@ func (h *Handler) FindDistricts(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Failed to bind parameters")
 	}
 
-	util.Sanitize(req)
+	shared.Sanitize(req, nil)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -51,7 +61,7 @@ func (h *Handler) FindDistricts(c echo.Context) error {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "Invalid query parameters")
 	}
 
-	districts, totalCount, err := h.service.District().Find(ctx, &district.FindDistrictsRequest{
+	districts, totalCount, err := h.service.District().Find(ctx, &service.FindDistrictsRequest{
 		Filter: &mysql.FilterDistrictPayload{
 			IDs:     req.IDs,
 			CityIDs: req.CityIDs,
@@ -80,7 +90,7 @@ func (h *Handler) FindDistricts(c echo.Context) error {
 	return response.Paginate(c, "Find districts success", list, pagination)
 }
 
-func (h *Handler) FindOneDistrict(c echo.Context) error {
+func (h *DistrictHandler) FindOneDistrict(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	id, err := parseUintParam(c, "id")
@@ -88,7 +98,7 @@ func (h *Handler) FindOneDistrict(c echo.Context) error {
 		return err
 	}
 
-	district, err := h.service.District().FindOne(ctx, &district.FindOneDistrictRequest{DistrictID: id})
+	district, err := h.service.District().FindOne(ctx, &service.FindOneDistrictRequest{DistrictID: id})
 	if err != nil {
 		return err
 	}

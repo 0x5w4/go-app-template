@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	mysql "goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/adapter/util/exception"
+	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 )

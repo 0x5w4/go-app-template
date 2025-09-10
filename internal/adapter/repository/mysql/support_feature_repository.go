@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"goapptemp/internal/adapter/logger"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"

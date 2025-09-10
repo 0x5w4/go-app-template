@@ -1,8 +1,10 @@
 package serializer
 
 import (
-	"goapptemp/internal/domain/entity"
 	"time"
+
+	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/domain/service"
 )
 
 type SupportFeatureResponseData struct {
@@ -66,7 +68,7 @@ type SupportFeaturePreviewResponseData struct {
 	IsActive ValidatableBoolResponseData   `json:"is_active"`
 }
 
-func SerializeSupportFeaturePreview(arg *entity.SupportFeaturePreview) *SupportFeaturePreviewResponseData {
+func SerializeSupportFeaturePreview(arg *service.SupportFeaturePreview) *SupportFeaturePreviewResponseData {
 	if arg == nil {
 		return nil
 	}
@@ -90,7 +92,7 @@ func SerializeSupportFeaturePreview(arg *entity.SupportFeaturePreview) *SupportF
 	return res
 }
 
-func SerializeSupportFeaturePreviews(arg []*entity.SupportFeaturePreview) []*SupportFeaturePreviewResponseData {
+func SerializeSupportFeaturePreviews(arg []*service.SupportFeaturePreview) []*SupportFeaturePreviewResponseData {
 	if len(arg) == 0 {
 		return nil
 	}
