@@ -50,7 +50,6 @@ linters:
     - thelper
 
 linters-settings:
-  version: v1.59.1
   goimports:
     local-prefixes: github.com/0x5w4/go-app-template/
   gocyclo:
