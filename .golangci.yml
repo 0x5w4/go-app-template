@@ -1,7 +1,5 @@
 run:
   timeout: 5m
-  concurrency: 0
-  tests: true
 
 linters:
   disable-all: true
@@ -10,9 +8,8 @@ linters:
     - errcheck
     - govet
     - staticcheck
-    - unused
-    - typecheck
     - copyloopvar
+    - ireturn
 
     # Style & maintainability
     - revive
@@ -24,6 +21,7 @@ linters:
     - whitespace
     - wsl
     - nolintlint
+    - errorlint
 
     # Formatting
     - gofmt
@@ -46,14 +44,15 @@ linters:
     - noctx
     - durationcheck
     - nilerr
-    # - wrapcheck
 
     # Testing
     - tparallel
+    - thelper
 
 linters-settings:
+  version: v1.59.1
   goimports:
-    local-prefixes: github.com/PCS-Indonesia/2504_m3s-api-reengineering/
+    local-prefixes: github.com/0x5w4/go-app-template/
   gocyclo:
     min-complexity: 30
   gocognit:
