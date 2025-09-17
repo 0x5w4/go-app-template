@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/golang-migrate/migrate/v4"
+	migrate "github.com/golang-migrate/migrate/v4"
 	echo "github.com/labstack/echo/v4"
 )
 
