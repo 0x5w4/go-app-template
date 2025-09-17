@@ -91,7 +91,10 @@ issues:
 
 output:
   formats:
-    - format: colored-line-number
+    line-number:
+      path: stdout
+    json:
+      path: stdout
   print-issued-lines: true
   print-linter-name: true
   path-prefix: ""
