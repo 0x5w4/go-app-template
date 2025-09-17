@@ -3,7 +3,7 @@ package shared
 import (
 	"fmt"
 	"math"
-	"math/rand/v2"
+	rand "math/rand/v2"
 
 	"github.com/cockroachdb/errors"
 )
