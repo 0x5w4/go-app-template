@@ -14,7 +14,7 @@ import (
 	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 const shutdownTimeout = 10 * time.Second

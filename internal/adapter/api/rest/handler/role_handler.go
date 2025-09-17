@@ -10,8 +10,8 @@ import (
 	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	validator "github.com/go-playground/validator/v10"
+	echo "github.com/labstack/echo/v4"
 )
 
 type RoleHandler struct {

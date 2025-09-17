@@ -9,8 +9,8 @@ import (
 	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/echo/v4"
-	"go.elastic.co/apm/v2"
+	echo "github.com/labstack/echo/v4"
+	apm "go.elastic.co/apm/v2"
 )
 
 func (s *echoServer) httpErrorHandler(err error, c echo.Context) {

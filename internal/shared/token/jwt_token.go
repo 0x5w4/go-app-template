@@ -2,11 +2,12 @@ package token
 
 import (
 	"fmt"
-	"goapptemp/constant"
-	"goapptemp/internal/shared"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"goapptemp/constant"
+	"goapptemp/internal/shared"
+
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type Token interface {

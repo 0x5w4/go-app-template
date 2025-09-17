@@ -8,7 +8,7 @@ import (
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/exception"
 
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 func parseUintParam(c echo.Context, paramName string) (uint, error) {

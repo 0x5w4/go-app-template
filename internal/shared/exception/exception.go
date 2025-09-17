@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-playground/validator/v10"
+	validator "github.com/go-playground/validator/v10"
 )
 
 type ErrorType string

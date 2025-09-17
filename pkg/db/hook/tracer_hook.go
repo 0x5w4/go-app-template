@@ -5,7 +5,7 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"go.elastic.co/apm/v2"
+	apm "go.elastic.co/apm/v2"
 )
 
 var _ bun.QueryHook = (*TracerHook)(nil)

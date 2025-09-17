@@ -8,7 +8,7 @@ import (
 	repo "goapptemp/internal/adapter/repository"
 	"goapptemp/pkg/logger"
 
-	"go.elastic.co/apm/v2"
+	apm "go.elastic.co/apm/v2"
 )
 
 type StaleTaskDetector interface {

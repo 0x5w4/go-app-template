@@ -11,7 +11,7 @@ import (
 	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	apmecho "go.elastic.co/apm/module/apmechov4/v2"
 )
