@@ -163,7 +163,11 @@ func (a *App) Migrate(reset bool) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			a.logger.Error().Err(err).Msg("Failed to close database connection")
+		}
+	}()
 
 	if reset {
 		if err := db.Reset(); err != nil {

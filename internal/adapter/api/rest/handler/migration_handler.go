@@ -36,7 +36,11 @@ func (h *MigrationHandler) GetVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	version, dirty, err := m.Version()
 	if err != nil {
@@ -80,7 +84,11 @@ func (h *MigrationHandler) ForceVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Force(version); err != nil {
 		h.logger.Error().Err(err).Msgf("Failed to force migration version to %d", version)
@@ -129,7 +137,11 @@ func (h *MigrationHandler) Up(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
@@ -158,7 +170,11 @@ func (h *MigrationHandler) Down(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Down(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
