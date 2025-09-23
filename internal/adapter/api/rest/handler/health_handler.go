@@ -2,10 +2,9 @@ package handler
 
 import (
 	"context"
+	"goapptemp/pkg/logger"
 	"net/http"
 	"time"
-
-	"goapptemp/pkg/logger"
 
 	echo "github.com/labstack/echo/v4"
 	"github.com/uptrace/bun"

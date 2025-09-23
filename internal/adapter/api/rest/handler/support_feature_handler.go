@@ -1,10 +1,6 @@
 package handler
 
 import (
-	"io"
-	"strconv"
-	"strings"
-
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
@@ -12,6 +8,9 @@ import (
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
+	"io"
+	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	validator "github.com/go-playground/validator/v10"
@@ -29,8 +28,8 @@ func NewSupportFeatureHandler(properties properties) *SupportFeatureHandler {
 }
 
 type CreateSupportFeature struct {
-	Name     string `json:"name" validate:"required,min=2,max=32,alpha_space"`
-	Key      string `json:"key" validate:"required,min=2,max=32,username_chars_allowed"`
+	Name     string `json:"name"      validate:"required,min=2,max=32,alpha_space"`
+	Key      string `json:"key"       validate:"required,min=2,max=32,username_chars_allowed"`
 	IsActive bool   `json:"is_active"`
 }
 
@@ -43,9 +42,9 @@ type BulkCreateSupportFeatureRequest struct {
 }
 
 type UpdateSupportFeature struct {
-	ID       uint    `param:"id" validate:"required,gt=0"`
-	Name     *string `json:"name,omitempty" validate:"omitempty,min=2,max=32,alpha_space"`
-	Key      *string `json:"key,omitempty" validate:"omitempty,min=2,max=32,username_chars_allowed"`
+	ID       uint    `validate:"required,gt=0"   param:"id"`
+	Name     *string `json:"name,omitempty"      validate:"omitempty,min=2,max=32,alpha_space"`
+	Key      *string `json:"key,omitempty"       validate:"omitempty,min=2,max=32,username_chars_allowed"`
 	IsActive *bool   `json:"is_active,omitempty"`
 }
 
@@ -54,14 +53,14 @@ type UpdateSupportFeatureRequest struct {
 }
 
 type FilterSupportFeatureRequest struct {
-	IDs      []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Codes    []string `query:"codes" validate:"omitempty,dive,min=2,max=50,alphanum"`
-	Names    []string `query:"names" validate:"omitempty,dive,min=2,max=32,alpha_space"`
-	Keys     []string `query:"keys" validate:"omitempty,dive,min=2,max=32,username_chars_allowed"`
-	IsActive *bool    `query:"is_active" validate:"omitempty"`
-	Search   string   `query:"search" validate:"omitempty,min=1"`
-	Page     int      `query:"page" validate:"omitempty,min=1"`
-	PerPage  int      `query:"per_page" validate:"omitempty,min=1,max=100"`
+	IDs      []uint   `validate:"omitempty,dive,gt=0"                                query:"ids"`
+	Codes    []string `validate:"omitempty,dive,min=2,max=50,alphanum"               query:"codes"`
+	Names    []string `validate:"omitempty,dive,min=2,max=32,alpha_space"            query:"names"`
+	Keys     []string `validate:"omitempty,dive,min=2,max=32,username_chars_allowed" query:"keys"`
+	IsActive *bool    `validate:"omitempty"                                          query:"is_active"`
+	Search   string   `validate:"omitempty,min=1"                                    query:"search"`
+	Page     int      `validate:"omitempty,min=1"                                    query:"page"`
+	PerPage  int      `validate:"omitempty,min=1,max=100"                            query:"per_page"`
 }
 
 func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {

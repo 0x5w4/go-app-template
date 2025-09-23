@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/spf13/viper"
 )
 
@@ -85,7 +86,8 @@ func LoadConfig(envPath string) (*Config, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		var cfgErr viper.ConfigFileNotFoundError
+		if !errors.As(err, &cfgErr) {
 			return nil, err
 		}
 	}

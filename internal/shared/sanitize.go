@@ -38,13 +38,11 @@ func Sanitize(data any, policy *bluemonday.Policy) {
 			field.SetString(sanitized)
 
 		case reflect.Struct:
-
 			if field.Addr().CanInterface() {
 				Sanitize(field.Addr().Interface(), policy)
 			}
 
 		case reflect.Ptr:
-
 			if !field.IsNil() && field.Elem().Kind() == reflect.Struct {
 				Sanitize(field.Interface(), policy)
 			}

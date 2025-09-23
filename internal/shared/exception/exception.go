@@ -86,6 +86,7 @@ func Wrapf(cause error, kind ErrorType, code string, format string, args ...any)
 
 func GetException(err error) (*Exception, bool) {
 	var ex *Exception
+
 	ok := errors.As(err, &ex)
 
 	return ex, ok
@@ -165,13 +166,13 @@ func FromValidationErrors(req any, validationErrors validator.ValidationErrors) 
 		case "email":
 			message = "Invalid email format"
 		case "gt":
-			message = fmt.Sprintf("This field must be greater than to %s", fieldErr.Param())
+			message = "This field must be greater than to " + fieldErr.Param()
 		case "lt":
-			message = fmt.Sprintf("This field must be less than to %s", fieldErr.Param())
+			message = "This field must be less than to " + fieldErr.Param()
 		case "gte":
-			message = fmt.Sprintf("This field must be greater than or equal to %s", fieldErr.Param())
+			message = "This field must be greater than or equal to " + fieldErr.Param()
 		case "lte":
-			message = fmt.Sprintf("This field must be less than or equal to %s", fieldErr.Param())
+			message = "This field must be less than or equal to " + fieldErr.Param()
 		case "eq":
 			message = fmt.Sprintf("This field must be equal to '%s'", fieldErr.Param())
 		case "ne":
@@ -206,7 +207,7 @@ func getJsonPathFromNamespace(rootType reflect.Type, namespace string) string {
 		}
 
 		if fieldIndex != "" {
-			fieldIndex = fmt.Sprintf(".%s", fieldIndex)
+			fieldIndex = "." + fieldIndex
 		}
 
 		field, found := currentType.FieldByName(fieldName)

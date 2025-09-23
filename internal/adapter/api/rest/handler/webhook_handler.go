@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"strconv"
-
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
+	"strconv"
 
 	"github.com/cockroachdb/errors"
 	validator "github.com/go-playground/validator/v10"
@@ -24,9 +23,9 @@ func NewWebhookHandler(properties properties) *WebhookHandler {
 }
 
 type UpdateIconRequest struct {
-	ID   uint   `query:"id" validate:"required,gt=0"`
-	Type string `query:"type" validate:"required,oneof=client group merchant"`
-	Link string `json:"link" validate:"required,url"`
+	ID   uint   `validate:"required,gt=0"                        query:"id"`
+	Type string `validate:"required,oneof=client group merchant" query:"type"`
+	Link string `json:"link"                                     validate:"required,url"`
 }
 
 func (h *WebhookHandler) UpdateIcon(c echo.Context) error {

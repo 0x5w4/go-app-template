@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"goapptemp/internal/shared/exception"
 	"regexp"
 	"strings"
 
 	mysql "goapptemp/internal/adapter/repository/mysql"
-	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
 )
@@ -15,7 +15,7 @@ func getDetailedRepoMessage(fullRepoError error, associatedBaseError error) stri
 	currentErr := fullRepoError
 	for currentErr != nil {
 		unwrapped := errors.Unwrap(currentErr)
-		if unwrapped == associatedBaseError {
+		if errors.Is(unwrapped, associatedBaseError) {
 			errMsg := currentErr.Error()
 			baseErrMsgSuffix := ": " + associatedBaseError.Error()
 
@@ -26,7 +26,7 @@ func getDetailedRepoMessage(fullRepoError error, associatedBaseError error) stri
 			return errMsg
 		}
 
-		if currentErr == associatedBaseError {
+		if errors.Is(currentErr, associatedBaseError) {
 			return associatedBaseError.Error()
 		}
 
@@ -64,7 +64,7 @@ func TranslateRepoError(err error) error {
 			ex.Errors = make(exception.FieldErrors)
 		}
 
-		var duplicateKeyRegex = regexp.MustCompile(`for field '(.+?)'`)
+		duplicateKeyRegex := regexp.MustCompile(`for field '(.+?)'`)
 
 		matches := duplicateKeyRegex.FindStringSubmatch(detailedMsg)
 		if len(matches) > 1 {

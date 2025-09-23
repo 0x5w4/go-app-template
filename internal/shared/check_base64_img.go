@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-const (
-	ImgMaxSize int = 10 * 1024 * 1024
-)
-
 func CheckBase64Image(base64Str string) (string, error) {
 	if strings.HasPrefix(base64Str, "data:image/") {
 		parts := strings.SplitN(base64Str, ",", 2)
@@ -24,12 +20,12 @@ func CheckBase64Image(base64Str string) (string, error) {
 
 	data, err := base64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode base64 string: %v", err)
+		return "", fmt.Errorf("failed to decode base64 string: %w", err)
 	}
 
 	_, format, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		return "", fmt.Errorf("failed to decode image: %v", err)
+		return "", fmt.Errorf("failed to decode image: %w", err)
 	}
 
 	if format == "jpeg" || format == "png" {

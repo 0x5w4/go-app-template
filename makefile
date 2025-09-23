@@ -71,10 +71,11 @@ help: ## ✨ Show this help message
 # ====================================================================================
 
 lint: ## 🧐 Run golangci-lint to analyze source code
+	@rm -rf ./reports/* 2>/dev/null || true
 	@command -v golangci-lint >/dev/null 2>&1 || \
 		(echo "--> golangci-lint not found. Please run 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest' to install." && exit 1)
 	@echo "Running golangci-lint..."
-	@golangci-lint run -v --timeout=5m ./...
+	@golangci-lint run -v --fix --timeout=5m ./...
 
 
 # ====================================================================================

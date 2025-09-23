@@ -24,12 +24,12 @@ func NewDistrictHandler(properties properties) *DistrictHandler {
 }
 
 type FilterDistrictRequest struct {
-	IDs     []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	CityIDs []uint   `query:"city_ids" validate:"omitempty,dive,gt=0"`
-	Names   []string `query:"names" validate:"omitempty,dive,min=2,max=100"`
-	Search  string   `query:"search" validate:"omitempty,min=1"`
-	Page    int      `query:"page" validate:"omitempty,min=1"`
-	PerPage int      `query:"per_page" validate:"omitempty,min=1,max=100"`
+	IDs     []uint   `validate:"omitempty,dive,gt=0"          query:"ids"`
+	CityIDs []uint   `validate:"omitempty,dive,gt=0"          query:"city_ids"`
+	Names   []string `validate:"omitempty,dive,min=2,max=100" query:"names"`
+	Search  string   `validate:"omitempty,min=1"              query:"search"`
+	Page    int      `validate:"omitempty,min=1"              query:"page"`
+	PerPage int      `validate:"omitempty,min=1,max=100"      query:"per_page"`
 }
 
 func (h *DistrictHandler) FindDistricts(c echo.Context) error {

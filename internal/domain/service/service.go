@@ -44,7 +44,6 @@ func NewService(
 	token token.Token,
 	publisher pubsub.Publisher,
 ) (Service, error) {
-
 	validate, err := shared.NewValidator()
 	if err != nil {
 		return nil, err

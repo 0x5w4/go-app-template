@@ -4,22 +4,22 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"log"
-	"mime/multipart"
-	"strconv"
-	"strings"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"io"
+	"mime/multipart"
+	"strconv"
+	"strings"
 
+	serror "goapptemp/internal/domain/service/error"
+
+	"github.com/cockroachdb/errors"
 	validator "github.com/go-playground/validator/v10"
 	excelize "github.com/xuri/excelize/v2"
 )
@@ -107,24 +107,24 @@ type TemplateImportSupportFeatureRequest struct {
 }
 
 type ValidatableString struct {
-	Value   string `json:"value" validate:"required,min=2,max=50,alpha_space"`
+	Value   string `json:"value"             validate:"required,min=2,max=50,alpha_space"`
 	Message string `json:"message,omitempty"`
 }
 
 type ValidatableKey struct {
-	Value   string `json:"value" validate:"required,min=2,max=50,username_chars_allowed"`
+	Value   string `json:"value"             validate:"required,min=2,max=50,username_chars_allowed"`
 	Message string `json:"message,omitempty"`
 }
 
 type ValidatableBool struct {
-	Value   *bool  `json:"value" validate:"required,boolean"`
+	Value   *bool  `json:"value"             validate:"required,boolean"`
 	Message string `json:"message,omitempty"`
 }
 
 type SupportFeaturePreview struct {
 	Row      int               `json:"row"`
-	Name     ValidatableString `json:"name" validate:"required"`
-	Key      ValidatableKey    `json:"key" validate:"required"`
+	Name     ValidatableString `json:"name"      validate:"required"`
+	Key      ValidatableKey    `json:"key"       validate:"required"`
 	IsActive ValidatableBool   `json:"is_active" validate:"required"`
 }
 
@@ -475,7 +475,7 @@ func (s *supportFeatureService) TemplateImport(ctx context.Context, req *Templat
 		totalRowsToFormat = headerRow + maxDataRows
 	)
 
-	var headers = []struct {
+	headers := []struct {
 		Name         string
 		ColumnLetter string
 		CommentText  string
@@ -506,8 +506,10 @@ func (s *supportFeatureService) TemplateImport(ctx context.Context, req *Templat
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F81BD"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 		Protection: &excelize.Protection{Locked: true},
 	})
@@ -692,8 +694,10 @@ func createErrorGuideSheet(f *excelize.File) error {
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F81BD"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Vertical: "center", Horizontal: "center", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 	})
 	if err != nil {
@@ -703,8 +707,10 @@ func createErrorGuideSheet(f *excelize.File) error {
 	cellStyle, err := f.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Vertical: "top", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 	})
 	if err != nil {
@@ -796,7 +802,11 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 		return nil, exception.Wrap(fileOpenErr, exception.TypeInternalError, exception.CodeInternalError, "Failed to open uploaded file")
 	}
 
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			s.logger.Error().Err(err).Msg("Failed to close uploaded file")
+		}
+	}()
 
 	f, excelOpenErr := excelize.OpenReader(src)
 	if excelOpenErr != nil {
@@ -805,7 +815,7 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 
 	defer func() {
 		if err := f.Close(); err != nil {
-			log.Printf("Error closing excel file: %v\n", err)
+			s.logger.Error().Err(err).Msg("Failed to close excel file")
 		}
 	}()
 
@@ -815,8 +825,8 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 	}
 
 	sheetName := sheetList[0]
-	rows, rowsErr := f.GetRows(sheetName)
 
+	rows, rowsErr := f.GetRows(sheetName)
 	if rowsErr != nil {
 		return nil, exception.Wrap(rowsErr, exception.TypeInternalError, exception.CodeInternalError, "Failed to read rows from excel sheet: "+sheetName)
 	}
@@ -902,7 +912,8 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 
 	for _, sf := range previews {
 		if err := s.validate.Struct(sf); err != nil {
-			if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var validationErrors validator.ValidationErrors
+			if errors.As(err, &validationErrors) {
 				for _, fe := range validationErrors {
 					var message string
 

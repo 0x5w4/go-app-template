@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	serror "goapptemp/internal/domain/service/error"
 )
 
 type CityService interface {

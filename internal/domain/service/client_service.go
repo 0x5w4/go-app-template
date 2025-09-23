@@ -2,19 +2,19 @@ package service
 
 import (
 	"context"
-	"strconv"
-	"strings"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"strconv"
+	"strings"
+	"time"
+
+	serror "goapptemp/internal/domain/service/error"
 )
 
 type ClientService interface {
@@ -109,7 +109,7 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 		now := time.Now()
 		req.Client.IconUpdatedAt = &now
 
-		if len(iconBase64) >= shared.ImgMaxSize {
+		if len(iconBase64) >= constant.ImgMaxSize {
 			return nil, exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Icon data too large")
 		}
 
@@ -262,7 +262,7 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 			isIconBase64 = true
 
 			iconBase64 = iconValue
-			if len(iconBase64) >= shared.ImgMaxSize {
+			if len(iconBase64) >= constant.ImgMaxSize {
 				return nil, exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Icon base64 data too large")
 			}
 

@@ -3,11 +3,11 @@ package mysql
 import (
 	"context"
 	"database/sql"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
 
+	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -49,7 +49,7 @@ func (r *clientSupportFeatureRepository) DeleteByClientID(ctx context.Context, c
 	}
 
 	_, err := r.db.NewDelete().Model((*model.ClientSupportFeature)(nil)).Where("client_id = ?", clientID).Exec(ctx)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return handleDBError(err, r.GetTableName(), "delete client support feature")
 	}
 

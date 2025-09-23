@@ -1,14 +1,13 @@
 package rest
 
 import (
-	"net/http"
-	"strings"
-	"time"
-
 	"goapptemp/constant"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	echo "github.com/labstack/echo/v4"
@@ -95,6 +94,7 @@ func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 				if autoDenied {
 					return ErrAuthHeaderMissing
 				}
+
 				return next(c)
 			}
 
@@ -102,6 +102,7 @@ func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 			if len(parts) != 2 {
 				return errors.Wrapf(ErrAuthHeaderInvalid, "expected 2 parts, got %d", len(parts))
 			}
+
 			tokenType, accessToken := parts[0], parts[1]
 
 			if strings.EqualFold(tokenType, constant.TOKEN_TYPE) {

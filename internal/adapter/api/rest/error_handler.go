@@ -1,12 +1,11 @@
 package rest
 
 import (
-	"net/http"
-
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"net/http"
 
 	"github.com/cockroachdb/errors"
 	echo "github.com/labstack/echo/v4"

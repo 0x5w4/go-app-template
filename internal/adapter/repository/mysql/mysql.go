@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"database/sql"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/pkg/db"

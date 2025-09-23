@@ -2,17 +2,17 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
+
+	serror "goapptemp/internal/domain/service/error"
 )
 
 type AuthService interface {
@@ -120,18 +120,22 @@ func (s *authService) Refresh(ctx context.Context, req *RefreshRequest) (*entity
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeUnauthorized, exception.CodeUnauthorized, "invalid refresh token")
 	}
+
 	user, err := s.repository.MySQL().User().FindByID(ctx, refreshTokenClaims.UserID)
 	if err != nil {
 		return nil, serror.TranslateRepoError(err)
 	}
+
 	accessToken, accessExpiresAt, err := s.token.GenerateAccessToken(user.ID)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "failed to generate access token")
 	}
+
 	refreshToken, refreshExpiresAt, err := s.token.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "failed to generate refresh token")
 	}
+
 	return &entity.Token{
 		AccessToken:           accessToken,
 		AccessTokenExpiresAt:  accessExpiresAt,

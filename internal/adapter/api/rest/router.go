@@ -12,7 +12,6 @@ func (s *echoServer) setupRouter() {
 			migrationGroup.POST("/up", s.handler.Migration().Up)
 			migrationGroup.POST("/down", s.handler.Migration().Down)
 		}
-
 	}
 
 	apiV1 := s.echo.Group("/api/v1")

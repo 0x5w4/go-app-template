@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -19,7 +20,7 @@ type pubsubClient struct {
 
 func NewPubsub(ctx context.Context, projectID string, credentialsPath string) (Pubsub, error) {
 	if credentialsPath == "" {
-		return nil, fmt.Errorf("credentialsPath cannot be empty if specified for PubSub client")
+		return nil, errors.New("credentialsPath cannot be empty if specified for PubSub client")
 	}
 
 	fileInfo, err := os.Stat(credentialsPath)

@@ -28,7 +28,7 @@ type CreateUser struct {
 	RoleIDs  []uint `json:"role_ids" validate:"required,dive,required,gt=0"`
 	Fullname string `json:"fullname" validate:"required,min=3,max=100"`
 	Username string `json:"username" validate:"required,min=3,max=100,username_chars_allowed"`
-	Email    string `json:"email" validate:"required,email,min=3,max=100"`
+	Email    string `json:"email"    validate:"required,email,min=3,max=100"`
 	Password string `json:"password" validate:"required,password,max=200"`
 }
 
@@ -37,9 +37,9 @@ type CreateUserRequest struct {
 }
 
 type UpdateUser struct {
-	ID       uint    `param:"id" validate:"required,gt=0"`
+	ID       uint    `validate:"required,gt=0"  param:"id"`
 	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
-	Email    *string `json:"email,omitempty" validate:"email,min=3,max=100"`
+	Email    *string `json:"email,omitempty"    validate:"email,min=3,max=100"`
 	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
 	Password *string `json:"password,omitempty" validate:"password,max=200"`
 	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
@@ -50,12 +50,12 @@ type UpdateUserRequest struct {
 }
 
 type FilterUserRequest struct {
-	IDs       []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Usernames []string `query:"usernames" validate:"omitemptymin=3,max=100,username_chars_allowed"`
-	Emails    []string `query:"emails" validate:"email,min=3,max=100"`
-	Search    string   `query:"search" validate:"omitempty,min=1"`
-	Page      int      `query:"page" validate:"omitempty,min=1"`
-	PerPage   int      `query:"per_page" validate:"omitempty,min=1,max=100"`
+	IDs       []uint   `validate:"omitempty,dive,gt=0"                           query:"ids"`
+	Usernames []string `validate:"omitemptymin=3,max=100,username_chars_allowed" query:"usernames"`
+	Emails    []string `validate:"email,min=3,max=100"                           query:"emails"`
+	Search    string   `validate:"omitempty,min=1"                               query:"search"`
+	Page      int      `validate:"omitempty,min=1"                               query:"page"`
+	PerPage   int      `validate:"omitempty,min=1,max=100"                       query:"per_page"`
 }
 
 func (h *UserHandler) CreateUser(c echo.Context) error {

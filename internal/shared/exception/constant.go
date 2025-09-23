@@ -1,7 +1,5 @@
 package exception
 
-
-
 const (
 	TypeInternalError        ErrorType = "Internal Error"
 	TypeServiceUnavailable   ErrorType = "Service Unavailable"

@@ -30,7 +30,7 @@ func (h *MigrationHandler) GetVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -78,7 +78,7 @@ func (h *MigrationHandler) ForceVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -131,7 +131,7 @@ func (h *MigrationHandler) Up(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -164,7 +164,7 @@ func (h *MigrationHandler) Down(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
@@ -205,5 +205,5 @@ func getMigrationPath() (string, error) {
 		return "", fmt.Errorf("migration directory not found at: %s", migrationPath)
 	}
 
-	return fmt.Sprintf("file://%s", migrationPath), nil
+	return "file://" + migrationPath, nil
 }

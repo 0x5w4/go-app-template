@@ -24,11 +24,11 @@ func NewProvinceHandler(properties properties) *ProvinceHandler {
 }
 
 type FilterProvinceRequest struct {
-	IDs     []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Names   []string `query:"names" validate:"omitempty,dive,min=2,max=100"`
-	Search  string   `query:"search" validate:"omitempty,min=1"`
-	Page    int      `query:"page" validate:"omitempty,min=1"`
-	PerPage int      `query:"per_page" validate:"omitempty,min=1,max=100"`
+	IDs     []uint   `validate:"omitempty,dive,gt=0"          query:"ids"`
+	Names   []string `validate:"omitempty,dive,min=2,max=100" query:"names"`
+	Search  string   `validate:"omitempty,min=1"              query:"search"`
+	Page    int      `validate:"omitempty,min=1"              query:"page"`
+	PerPage int      `validate:"omitempty,min=1,max=100"      query:"per_page"`
 }
 
 func (h *ProvinceHandler) FindProvinces(c echo.Context) error {

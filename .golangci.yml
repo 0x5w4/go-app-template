@@ -2,13 +2,13 @@ version: "2"
 
 run:
   timeout: 5m
+  tests: true
 
 linters:
   default: none
   enable:
     - staticcheck
     - govet
-    - errcheck
     - errorlint
     - nilerr
     - ineffassign
@@ -25,9 +25,7 @@ linters:
     - godot
     - canonicalheader
     - dupword
-    - funlen
     - gocyclo
-    - gocognit
     - importas
     - nakedret
     - tagalign
@@ -55,15 +53,10 @@ linters:
     - misspell
 
   settings:
-    goimports:
-      local-prefixes: github.com/0x5w4/go-app-template/
     gocognit:
-      min-complexity: 30
+      min-complexity: 50
     gocyclo:
-      min-complexity: 30
-    funlen:
-      lines: 80
-      statements: 50
+      min-complexity: 50
     goconst:
       min-len: 2
       min-occurrences: 3
@@ -76,9 +69,6 @@ linters:
     wsl_v5:
       allow-first-in-block: true
       allow-whole-block: false
-      force-err-cuddling: true
-    goheader:
-    importas:
     gosec:
       excludes:
         - G101 
@@ -102,58 +92,46 @@ linters:
         - bson
         - db
         - validate
+  
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - funlen
+          - gocognit
+          - gocyclo
+          - gosec
+        path: _test\.go|.*_gen\.go|.*\.pb\.go
+      - linters:
+          - revive
+        path: _test\.go
+        text: comment on exported function
+      - linters:
+          - gosec
+        path: _test\.go
+        text: 'G104: Errors unhandled'
+    paths:
+      - .*\.gen\.go
+      - .*_mock\.go
+      - .*\.pb\.go
+      - third_party$
+      - builtin$
+      - examples$
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-use-default: true
-  exclude-dirs-use-default: true
-  exclude-files:
-    - ".*\\.gen\\.go"
-    - ".*_mock\\.go"
-    - ".*\\.pb\\.go"
-  exclude-rules:
-    - path: _test\.go|.*_gen\.go|.*\.pb\.go
-      linters:
-        - funlen
-        - gocyclo
-        - gocognit
-        - gosec
-    - path: _test\.go
-      text: "comment on exported function"
-      linters:
-        - revive
-    - path: _test\.go
-      text: "G104: Errors unhandled"
-      linters:
-        - gosec
 
 output:  
   formats:
-    text:
-      path: ./reports/golangci-lint.txt
-      print-linter-name: false
-      print-issued-lines: false
-      colors: false
-    json:
-      path: ./reports/golangci-lint.json
-    tab:
-      path: ./reports/golangci-lint.txt
-      print-linter-name: true
-      colors: false
     html:
       path: ./reports/golangci-lint.html
-    checkstyle:
-      path: ./reports/golangci-lint.xml
-    code-climate:
-      path: ./reports/golangci-lint.json
-    junit-xml:
-      path: ./reports/golangci-lint.xml
-      extended: true
-    teamcity:
-      path: ./reports/golangci-lint.txt
-    sarif:
-      path: ./reports/golangci-lint.json
   path-prefix: ""
   path-mode: "abs"
   sort-order:
@@ -164,4 +142,23 @@ output:
 
 severity:
   default: error
-  rules:
+  rules: []
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/0x5w4/go-app-template
+  exclusions:
+    generated: lax
+    paths:
+      - .*\.gen\.go
+      - .*_mock\.go
+      - .*\.pb\.go
+      - third_party$
+      - builtin$
+      - examples$

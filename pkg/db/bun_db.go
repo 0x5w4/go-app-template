@@ -3,13 +3,14 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"time"
-
 	"goapptemp/config"
-	migrationFS "goapptemp/migration"
 	"goapptemp/pkg/db/hook"
 	"goapptemp/pkg/logger"
+	"time"
 
+	migrationFS "goapptemp/migration"
+
+	"github.com/cockroachdb/errors"
 	migrate "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -91,8 +92,8 @@ func (d *BunDB) Migrate() error {
 	}()
 
 	version, dirty, err := m.Version()
-	if err != nil && err != migrate.ErrNilVersion {
-		return fmt.Errorf("failed to get migration version: %w", err)
+	if err != nil && !errors.Is(err, migrate.ErrNilVersion) {
+		return fmt.Errorf("failed to get current migration version: %w", err)
 	}
 
 	if dirty {
@@ -103,8 +104,8 @@ func (d *BunDB) Migrate() error {
 		}
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		d.logger.Error().Err(err).Msg("Migration failed")
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
@@ -133,26 +134,25 @@ func (d *BunDB) Reset() error {
 		return fmt.Errorf("cannot create migration instance for drop: %w", err)
 	}
 
-	d.logger.Warn().Msg("⚠️ Resetting database by dropping all tables...")
-	if err := m.Drop(); err != nil && err != migrate.ErrNoChange {
-		m.Close()
-		return fmt.Errorf("failed to drop database: %w", err)
-	}
-	m.Close()
-	d.logger.Info().Msg("Database reset complete.")
-
-	d.logger.Info().Msg("Applying all migrations...")
-	m, err = migrate.NewWithSourceInstance("iofs", sourceInstance, d.config.MySQL.MigrateDSN)
-	if err != nil {
-		return fmt.Errorf("cannot create migration instance for up: %w", err)
-	}
 	defer func() {
 		if sourceErr, dbErr := m.Close(); sourceErr != nil || dbErr != nil {
 			d.logger.Error().Msgf("Error closing migration instance: source_err=%v, db_err=%v", sourceErr, dbErr)
 		}
 	}()
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	d.logger.Warn().Msg("⚠️ Resetting database by dropping all tables...")
+
+	err = m.Drop()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		m.Close()
+		return fmt.Errorf("failed to drop database: %w", err)
+	}
+
+	d.logger.Info().Msg("Database reset complete.")
+	d.logger.Info().Msg("Applying all migrations...")
+
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 

@@ -3,15 +3,14 @@ package rest
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/api/rest/handler"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
+	"net/http"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	echo "github.com/labstack/echo/v4"

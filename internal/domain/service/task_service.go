@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"goapptemp/config"
+	"goapptemp/pkg/logger"
 	"time"
 
-	"goapptemp/config"
 	repo "goapptemp/internal/adapter/repository"
-	"goapptemp/pkg/logger"
 
 	apm "go.elastic.co/apm/v2"
 )

@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"goapptemp/config"
+	"goapptemp/internal/adapter/repository/mysql"
+	"goapptemp/pkg/logger"
 	"strings"
 
-	"goapptemp/config"
 	repo "goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+
 	serror "goapptemp/internal/domain/service/error"
-	"goapptemp/pkg/logger"
 )
 
 type WebhookService interface {
@@ -40,8 +41,7 @@ type UpdateIconRequest struct {
 }
 
 func (s *webhookService) UpdateIcon(ctx context.Context, req *UpdateIconRequest) error {
-	switch req.Type {
-	case "client":
+	if req.Type == "client" {
 		client, err := s.repo.MySQL().Client().FindByID(ctx, req.ID, false)
 		if err != nil {
 			return serror.TranslateRepoError(err)
@@ -59,5 +59,6 @@ func (s *webhookService) UpdateIcon(ctx context.Context, req *UpdateIconRequest)
 			return serror.TranslateRepoError(err)
 		}
 	}
+
 	return nil
 }

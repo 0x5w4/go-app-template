@@ -2,9 +2,9 @@ package pubsub
 
 import (
 	"context"
+	"goapptemp/pkg/logger"
 	"time"
 
-	"goapptemp/pkg/logger"
 	pubsubClient "goapptemp/pkg/pubsub"
 
 	"cloud.google.com/go/pubsub"
@@ -32,7 +32,7 @@ func NewPublisher(logger logger.Logger, pubsub pubsubClient.Pubsub, topicID stri
 	}, nil
 }
 
-// TODO: add log hook for success and failure
+// TODO: Add log hook for success and failure.
 func (p *publisher) Publish(ctx context.Context, data []byte, attributes map[string]string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()

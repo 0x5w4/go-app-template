@@ -2,14 +2,15 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
-	repo "goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	repo "goapptemp/internal/adapter/repository"
+
+	serror "goapptemp/internal/domain/service/error"
 )
 
 type ProvinceService interface {

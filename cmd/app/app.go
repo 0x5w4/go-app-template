@@ -2,13 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/api/rest"
 	"goapptemp/internal/adapter/pubsub"
@@ -17,8 +12,14 @@ import (
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/db"
 	"goapptemp/pkg/logger"
-	pubsubClient "goapptemp/pkg/pubsub"
 	"goapptemp/pkg/tracer"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
+	pubsubClient "goapptemp/pkg/pubsub"
 )
 
 type App struct {
@@ -31,11 +32,11 @@ type App struct {
 
 func NewApp(config *config.Config, logger logger.Logger) (*App, error) {
 	if config == nil {
-		return nil, fmt.Errorf("configuration cannot be nil")
+		return nil, errors.New("configuration cannot be nil")
 	}
 
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, errors.New("logger cannot be nil")
 	}
 
 	return &App{
@@ -48,8 +49,10 @@ func (a *App) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	var wg sync.WaitGroup
-	var err error
+	var (
+		wg  sync.WaitGroup
+		err error
+	)
 
 	// Initialize tracer
 	a.tracer, err = tracer.NewApmTracer(&tracer.Config{
@@ -104,6 +107,7 @@ func (a *App) Run() error {
 
 	go func() {
 		defer wg.Done()
+
 		service.StaleTaskDetector().Start(ctx)
 	}()
 
@@ -116,6 +120,7 @@ func (a *App) Run() error {
 	if err := a.restServer.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+
 	a.logger.Info().Msgf("Server started at %s:%d", a.config.HTTP.Host, a.config.HTTP.Port)
 
 	// Wait for shutdown signal
@@ -163,6 +168,7 @@ func (a *App) Migrate(reset bool) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if err := db.Close(); err != nil {
 			a.logger.Error().Err(err).Msg("Failed to close database connection")
