@@ -47,10 +47,6 @@ type LoginRequest struct {
 	Password string
 }
 
-type RefreshRequest struct {
-	RefreshToken string
-}
-
 func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.User, error) {
 	users, _, err := s.repository.MySQL().User().Find(ctx, &mysql.FilterUserPayload{Usernames: []string{req.Username}})
 	if err != nil {
@@ -114,6 +110,10 @@ func (s *authService) AuthorizationCheck(ctx context.Context, userID uint, permi
 	}
 
 	return false, nil
+}
+
+type RefreshRequest struct {
+	RefreshToken string
 }
 
 func (s *authService) Refresh(ctx context.Context, req *RefreshRequest) (*entity.Token, error) {

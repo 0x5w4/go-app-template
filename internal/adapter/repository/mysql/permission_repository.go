@@ -20,22 +20,6 @@ type PermissionRepository interface {
 	Delete(ctx context.Context, id uint) error
 }
 
-type FilterPermissionPayload struct {
-	IDs     []uint
-	Codes   []string
-	Names   []string
-	Search  string
-	Page    int
-	PerPage int
-}
-
-type UpdatePermissionPayload struct {
-	ID          uint
-	Code        *string
-	Name        *string
-	Description *string
-}
-
 type permissionRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -73,6 +57,15 @@ func (r *permissionRepository) FindByID(ctx context.Context, id uint) (*entity.P
 	}
 
 	return permission.ToDomain(), nil
+}
+
+type FilterPermissionPayload struct {
+	IDs     []uint
+	Codes   []string
+	Names   []string
+	Search  string
+	Page    int
+	PerPage int
 }
 
 func (r *permissionRepository) Find(ctx context.Context, filter *FilterPermissionPayload) ([]*entity.Permission, int, error) {
@@ -130,6 +123,13 @@ func (r *permissionRepository) Find(ctx context.Context, filter *FilterPermissio
 	}
 
 	return model.ToPermissionsDomain(permissions), totalCount, nil
+}
+
+type UpdatePermissionPayload struct {
+	ID          uint
+	Code        *string
+	Name        *string
+	Description *string
 }
 
 func (r *permissionRepository) Update(ctx context.Context, req *UpdatePermissionPayload) (*entity.Permission, error) {

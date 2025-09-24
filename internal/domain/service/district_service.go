@@ -40,10 +40,6 @@ type FindDistrictsRequest struct {
 	Filter *mysql.FilterDistrictPayload
 }
 
-type FindOneDistrictRequest struct {
-	DistrictID uint
-}
-
 func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error) {
 	districts, totalCount, err := s.repo.MySQL().District().Find(ctx, req.Filter)
 	if err != nil {
@@ -51,6 +47,10 @@ func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) (
 	}
 
 	return districts, totalCount, nil
+}
+
+type FindOneDistrictRequest struct {
+	DistrictID uint
 }
 
 func (s *districtService) FindOne(ctx context.Context, req *FindOneDistrictRequest) (*entity.District, error) {

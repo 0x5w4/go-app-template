@@ -16,15 +16,6 @@ type CityRepository interface {
 	Find(ctx context.Context, filter *FilterCityPayload) ([]*entity.City, int, error)
 }
 
-type FilterCityPayload struct {
-	IDs         []uint
-	ProvinceIDs []uint
-	Names       []string
-	Search      string
-	Page        int
-	PerPage     int
-}
-
 type cityRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -36,6 +27,15 @@ func NewCityRepository(db bun.IDB, logger logger.Logger) *cityRepository {
 
 func (r *cityRepository) GetTableName() string {
 	return "cities"
+}
+
+type FilterCityPayload struct {
+	IDs         []uint
+	ProvinceIDs []uint
+	Names       []string
+	Search      string
+	Page        int
+	PerPage     int
 }
 
 func (r *cityRepository) Find(ctx context.Context, filter *FilterCityPayload) ([]*entity.City, int, error) {

@@ -16,14 +16,6 @@ type ProvinceRepository interface {
 	Find(ctx context.Context, filter *FilterProvincePayload) ([]*entity.Province, int, error)
 }
 
-type FilterProvincePayload struct {
-	IDs     []uint
-	Names   []string
-	Search  string
-	Page    int
-	PerPage int
-}
-
 type provinceRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -35,6 +27,14 @@ func NewProvinceRepository(db bun.IDB, logger logger.Logger) *provinceRepository
 
 func (r *provinceRepository) GetTableName() string {
 	return "provinces"
+}
+
+type FilterProvincePayload struct {
+	IDs     []uint
+	Names   []string
+	Search  string
+	Page    int
+	PerPage int
 }
 
 func (r *provinceRepository) Find(ctx context.Context, filter *FilterProvincePayload) ([]*entity.Province, int, error) {

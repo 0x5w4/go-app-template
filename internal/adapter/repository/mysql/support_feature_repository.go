@@ -27,25 +27,6 @@ type SupportFeatureRepository interface {
 	FindExistingKeysAndNames(ctx context.Context, keys []string, names []string) (existingKeys map[string]struct{}, existingNames map[string]struct{}, err error)
 }
 
-type FilterSupportFeaturePayload struct {
-	IDs      []uint
-	Codes    []string
-	Names    []string
-	Keys     []string
-	IsActive *bool
-	Search   string
-	Page     int
-	PerPage  int
-}
-
-type UpdateSupportFeaturePayload struct {
-	ID       uint
-	Code     *string
-	Name     *string
-	Key      *string
-	IsActive *bool
-}
-
 type supportFeatureRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -83,6 +64,17 @@ func (r *supportFeatureRepository) BulkCreate(ctx context.Context, req []*entity
 	}
 
 	return model.ToSupportFeaturesDomain(supportFeatures), nil
+}
+
+type FilterSupportFeaturePayload struct {
+	IDs      []uint
+	Codes    []string
+	Names    []string
+	Keys     []string
+	IsActive *bool
+	Search   string
+	Page     int
+	PerPage  int
 }
 
 func (r *supportFeatureRepository) Find(ctx context.Context, filter *FilterSupportFeaturePayload) ([]*entity.SupportFeature, int, error) {
@@ -174,6 +166,14 @@ func (r *supportFeatureRepository) FindByID(ctx context.Context, id uint) (*enti
 	}
 
 	return supportFeature.ToDomain(), nil
+}
+
+type UpdateSupportFeaturePayload struct {
+	ID       uint
+	Code     *string
+	Name     *string
+	Key      *string
+	IsActive *bool
 }
 
 func (r *supportFeatureRepository) Update(ctx context.Context, req *UpdateSupportFeaturePayload) (*entity.SupportFeature, error) {

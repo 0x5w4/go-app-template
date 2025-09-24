@@ -40,10 +40,6 @@ type FindProvincesRequest struct {
 	Filter *mysql.FilterProvincePayload
 }
 
-type FindOneProvinceRequest struct {
-	ProvinceID uint
-}
-
 func (s *provinceService) Find(ctx context.Context, req *FindProvincesRequest) ([]*entity.Province, int, error) {
 	provinces, totalCount, err := s.repo.MySQL().Province().Find(ctx, req.Filter)
 	if err != nil {
@@ -51,6 +47,10 @@ func (s *provinceService) Find(ctx context.Context, req *FindProvincesRequest) (
 	}
 
 	return provinces, totalCount, nil
+}
+
+type FindOneProvinceRequest struct {
+	ProvinceID uint
 }
 
 func (s *provinceService) FindOne(ctx context.Context, req *FindOneProvinceRequest) (*entity.Province, error) {

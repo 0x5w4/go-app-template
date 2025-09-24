@@ -21,23 +21,6 @@ type CompanyRepository interface {
 	Delete(ctx context.Context, id uint) error
 }
 
-type FilterCompanyPayload struct {
-	IDs      []uint
-	AdminIDs []uint
-	Names    []string
-	Search   string
-	Page     int
-	PerPage  int
-}
-
-type UpdateCompanyPayload struct {
-	ID            uint
-	Name          *string
-	Icon          *string
-	IconUpdatedAt *time.Time
-	AdminID       *uint
-}
-
 type companyRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -62,6 +45,15 @@ func (r *companyRepository) Create(ctx context.Context, req *entity.Company) (*e
 	}
 
 	return company.ToDomain(), nil
+}
+
+type FilterCompanyPayload struct {
+	IDs      []uint
+	AdminIDs []uint
+	Names    []string
+	Search   string
+	Page     int
+	PerPage  int
 }
 
 func (r *companyRepository) Find(ctx context.Context, filter *FilterCompanyPayload) ([]*entity.Company, int, error) {
@@ -126,6 +118,14 @@ func (r *companyRepository) FindByID(ctx context.Context, id uint) (*entity.Comp
 	}
 
 	return company.ToDomain(), nil
+}
+
+type UpdateCompanyPayload struct {
+	ID            uint
+	Name          *string
+	Icon          *string
+	IconUpdatedAt *time.Time
+	AdminID       *uint
 }
 
 func (r *companyRepository) Update(ctx context.Context, req *UpdateCompanyPayload) (*entity.Company, error) {

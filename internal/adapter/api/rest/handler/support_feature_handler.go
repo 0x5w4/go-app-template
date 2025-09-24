@@ -37,32 +37,6 @@ type CreateSupportFeatureRequest struct {
 	SupportFeature CreateSupportFeature `json:"help_service" validate:"required"`
 }
 
-type BulkCreateSupportFeatureRequest struct {
-	SupportFeatures []CreateSupportFeature `json:"help_services" validate:"required,dive"`
-}
-
-type UpdateSupportFeature struct {
-	ID       uint    `validate:"required,gt=0"   param:"id"`
-	Name     *string `json:"name,omitempty"      validate:"omitempty,min=2,max=32,alpha_space"`
-	Key      *string `json:"key,omitempty"       validate:"omitempty,min=2,max=32,username_chars_allowed"`
-	IsActive *bool   `json:"is_active,omitempty"`
-}
-
-type UpdateSupportFeatureRequest struct {
-	SupportFeature UpdateSupportFeature `json:"help_service" validate:"required"`
-}
-
-type FilterSupportFeatureRequest struct {
-	IDs      []uint   `validate:"omitempty,dive,gt=0"                                query:"ids"`
-	Codes    []string `validate:"omitempty,dive,min=2,max=50,alphanum"               query:"codes"`
-	Names    []string `validate:"omitempty,dive,min=2,max=32,alpha_space"            query:"names"`
-	Keys     []string `validate:"omitempty,dive,min=2,max=32,username_chars_allowed" query:"keys"`
-	IsActive *bool    `validate:"omitempty"                                          query:"is_active"`
-	Search   string   `validate:"omitempty,min=1"                                    query:"search"`
-	Page     int      `validate:"omitempty,min=1"                                    query:"page"`
-	PerPage  int      `validate:"omitempty,min=1,max=100"                            query:"per_page"`
-}
-
 func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -103,6 +77,10 @@ func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {
 	data := serializer.SerializeSupportFeature(supportFeature)
 
 	return response.Success(c, "Create help service success", data)
+}
+
+type BulkCreateSupportFeatureRequest struct {
+	SupportFeatures []CreateSupportFeature `json:"help_services" validate:"required,dive"`
 }
 
 func (h *SupportFeatureHandler) BulkCreateSupportFeatures(c echo.Context) error {
@@ -160,6 +138,17 @@ func (h *SupportFeatureHandler) BulkCreateSupportFeatures(c echo.Context) error 
 	data := serializer.SerializeSupportFeatures(supportFeatures)
 
 	return response.Success(c, "Bulk create help service success", data)
+}
+
+type FilterSupportFeatureRequest struct {
+	IDs      []uint   `validate:"omitempty,dive,gt=0"                                query:"ids"`
+	Codes    []string `validate:"omitempty,dive,min=2,max=50,alphanum"               query:"codes"`
+	Names    []string `validate:"omitempty,dive,min=2,max=32,alpha_space"            query:"names"`
+	Keys     []string `validate:"omitempty,dive,min=2,max=32,username_chars_allowed" query:"keys"`
+	IsActive *bool    `validate:"omitempty"                                          query:"is_active"`
+	Search   string   `validate:"omitempty,min=1"                                    query:"search"`
+	Page     int      `validate:"omitempty,min=1"                                    query:"page"`
+	PerPage  int      `validate:"omitempty,min=1,max=100"                            query:"per_page"`
 }
 
 func (h *SupportFeatureHandler) FindSupportFeatures(c echo.Context) error {
@@ -254,6 +243,17 @@ func (h *SupportFeatureHandler) FindOneSupportFeature(c echo.Context) error {
 	data := serializer.SerializeSupportFeature(supportFeature)
 
 	return response.Success(c, "Find one help service success", data)
+}
+
+type UpdateSupportFeature struct {
+	ID       uint    `validate:"required,gt=0"   param:"id"`
+	Name     *string `json:"name,omitempty"      validate:"omitempty,min=2,max=32,alpha_space"`
+	Key      *string `json:"key,omitempty"       validate:"omitempty,min=2,max=32,username_chars_allowed"`
+	IsActive *bool   `json:"is_active,omitempty"`
+}
+
+type UpdateSupportFeatureRequest struct {
+	SupportFeature UpdateSupportFeature `json:"help_service" validate:"required"`
 }
 
 func (h *SupportFeatureHandler) UpdateSupportFeature(c echo.Context) error {

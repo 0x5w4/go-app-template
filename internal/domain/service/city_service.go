@@ -39,10 +39,6 @@ type FindCitiesRequest struct {
 	Filter *mysql.FilterCityPayload
 }
 
-type FindOneCityRequest struct {
-	CityID uint
-}
-
 func (s *cityService) Find(ctx context.Context, req *FindCitiesRequest) ([]*entity.City, int, error) {
 	citys, totalCount, err := s.repo.MySQL().City().Find(ctx, req.Filter)
 	if err != nil {
@@ -50,6 +46,10 @@ func (s *cityService) Find(ctx context.Context, req *FindCitiesRequest) ([]*enti
 	}
 
 	return citys, totalCount, nil
+}
+
+type FindOneCityRequest struct {
+	CityID uint
 }
 
 func (s *cityService) FindOne(ctx context.Context, req *FindOneCityRequest) (*entity.City, error) {

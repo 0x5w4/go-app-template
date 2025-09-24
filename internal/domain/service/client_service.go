@@ -50,31 +50,6 @@ type CreateClientRequest struct {
 	Client     *entity.Client
 }
 
-type UpdateClientRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateClientPayload
-}
-
-type DeleteClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
-}
-
-type FindClientsRequest struct {
-	AuthParams *AuthParams
-	Filter     *mysql.FilterClientPayload
-}
-
-type FindOneClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
-}
-
-type IsDeletableClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
-}
-
 func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*entity.Client, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -172,6 +147,11 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 	return createdClient, nil
 }
 
+type FindClientsRequest struct {
+	AuthParams *AuthParams
+	Filter     *mysql.FilterClientPayload
+}
+
 func (s *clientService) Find(ctx context.Context, req *FindClientsRequest) ([]*entity.Client, int, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, 0, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -192,6 +172,11 @@ func (s *clientService) Find(ctx context.Context, req *FindClientsRequest) ([]*e
 	}
 
 	return clients, totalCount, nil
+}
+
+type FindOneClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
 }
 
 func (s *clientService) FindOne(ctx context.Context, req *FindOneClientRequest) (*entity.Client, error) {
@@ -218,6 +203,11 @@ func (s *clientService) FindOne(ctx context.Context, req *FindOneClientRequest) 
 	}
 
 	return client, nil
+}
+
+type UpdateClientRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateClientPayload
 }
 
 func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*entity.Client, error) {
@@ -313,6 +303,11 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 	return updatedClient, nil
 }
 
+type DeleteClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
+}
+
 func (s *clientService) Delete(ctx context.Context, req *DeleteClientRequest) error {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -359,6 +354,11 @@ func (s *clientService) Delete(ctx context.Context, req *DeleteClientRequest) er
 	}
 
 	return nil
+}
+
+type IsDeletableClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
 }
 
 func (s *clientService) IsDeletable(ctx context.Context, req *IsDeletableClientRequest) (bool, error) {

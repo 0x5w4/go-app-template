@@ -44,26 +44,6 @@ type CreateRoleRequest struct {
 	Role       *entity.Role
 }
 
-type UpdateRoleRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateRolePayload
-}
-
-type DeleteRoleRequest struct {
-	AuthParams *AuthParams
-	RoleID     uint
-}
-
-type FindRolesRequest struct {
-	AuthParams *AuthParams
-	Filter     *mysql.FilterRolePayload
-}
-
-type FindOneRoleRequest struct {
-	AuthParams *AuthParams
-	RoleID     uint
-}
-
 func (s *roleService) Create(ctx context.Context, req *CreateRoleRequest) (*entity.Role, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -111,6 +91,11 @@ func (s *roleService) Create(ctx context.Context, req *CreateRoleRequest) (*enti
 	}
 
 	return role, nil
+}
+
+type UpdateRoleRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateRolePayload
 }
 
 func (s *roleService) Update(ctx context.Context, req *UpdateRoleRequest) (*entity.Role, error) {
@@ -179,6 +164,11 @@ func (s *roleService) Update(ctx context.Context, req *UpdateRoleRequest) (*enti
 	return role, nil
 }
 
+type DeleteRoleRequest struct {
+	AuthParams *AuthParams
+	RoleID     uint
+}
+
 func (s *roleService) Delete(ctx context.Context, req *DeleteRoleRequest) error {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -205,6 +195,11 @@ func (s *roleService) Delete(ctx context.Context, req *DeleteRoleRequest) error 
 	return nil
 }
 
+type FindRolesRequest struct {
+	AuthParams *AuthParams
+	Filter     *mysql.FilterRolePayload
+}
+
 func (s *roleService) Find(ctx context.Context, req *FindRolesRequest) ([]*entity.Role, int, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, 0, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -225,6 +220,11 @@ func (s *roleService) Find(ctx context.Context, req *FindRolesRequest) ([]*entit
 	}
 
 	return roles, totalCount, nil
+}
+
+type FindOneRoleRequest struct {
+	AuthParams *AuthParams
+	RoleID     uint
 }
 
 func (s *roleService) FindOne(ctx context.Context, req *FindOneRoleRequest) (*entity.Role, error) {

@@ -24,25 +24,6 @@ type UserRepository interface {
 	SyncRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error)
 }
 
-type UpdateUserPayload struct {
-	ID       uint
-	RoleIDs  []*uint
-	Fullname *string
-	Username *string
-	Email    *string
-	Password *string
-}
-
-type FilterUserPayload struct {
-	IDs       []uint
-	Fullnames []string
-	Usernames []string
-	Emails    []string
-	Search    string
-	Page      int
-	PerPage   int
-}
-
 type userRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -67,6 +48,16 @@ func (r *userRepository) Create(ctx context.Context, req *entity.User) (*entity.
 	}
 
 	return user.ToDomain(), nil
+}
+
+type FilterUserPayload struct {
+	IDs       []uint
+	Fullnames []string
+	Usernames []string
+	Emails    []string
+	Search    string
+	Page      int
+	PerPage   int
 }
 
 func (r *userRepository) Find(ctx context.Context, filter *FilterUserPayload) ([]*entity.User, int, error) {
@@ -142,6 +133,15 @@ func (r *userRepository) FindByID(ctx context.Context, id uint) (*entity.User, e
 	}
 
 	return user.ToDomain(), nil
+}
+
+type UpdateUserPayload struct {
+	ID       uint
+	RoleIDs  []*uint
+	Fullname *string
+	Username *string
+	Email    *string
+	Password *string
 }
 
 func (r *userRepository) Update(ctx context.Context, req *UpdateUserPayload) (*entity.User, error) {

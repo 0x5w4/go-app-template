@@ -24,35 +24,6 @@ type ClientRepository interface {
 	IsCodeExists(ctx context.Context, code string) (bool, error)
 }
 
-type FilterClientPayload struct {
-	IDs        []uint
-	CompanyIDs []uint
-	Codes      []string
-	Names      []string
-	PICNames   []string
-	Search     string
-	Page       int
-	PerPage    int
-}
-
-type UpdateClientPayload struct {
-	ID                    uint
-	CompanyID             *uint
-	Name                  *string
-	ProfileID             *uint
-	Phone                 *string
-	Fax                   *string
-	Icon                  *string
-	IconUpdatedAt         *time.Time
-	PICName               *string
-	PICPhone              *string
-	DistrictID            *uint
-	Village               *string
-	PostalCode            *string
-	Address               *string
-	ClientSupportFeatures []*entity.ClientSupportFeature
-}
-
 type clientRepository struct {
 	db     bun.IDB
 	logger logger.Logger
@@ -77,6 +48,17 @@ func (r *clientRepository) Create(ctx context.Context, req *entity.Client) (*ent
 	}
 
 	return client.ToDomain(), nil
+}
+
+type FilterClientPayload struct {
+	IDs        []uint
+	CompanyIDs []uint
+	Codes      []string
+	Names      []string
+	PICNames   []string
+	Search     string
+	Page       int
+	PerPage    int
 }
 
 func (r *clientRepository) Find(ctx context.Context, filter *FilterClientPayload) ([]*entity.Client, int, error) {
@@ -154,6 +136,24 @@ func (r *clientRepository) FindByID(ctx context.Context, id uint, isWithRelation
 	}
 
 	return client.ToDomain(), nil
+}
+
+type UpdateClientPayload struct {
+	ID                    uint
+	CompanyID             *uint
+	Name                  *string
+	ProfileID             *uint
+	Phone                 *string
+	Fax                   *string
+	Icon                  *string
+	IconUpdatedAt         *time.Time
+	PICName               *string
+	PICPhone              *string
+	DistrictID            *uint
+	Village               *string
+	PostalCode            *string
+	Address               *string
+	ClientSupportFeatures []*entity.ClientSupportFeature
 }
 
 func (r *clientRepository) Update(ctx context.Context, req *UpdateClientPayload) (*entity.Client, error) {

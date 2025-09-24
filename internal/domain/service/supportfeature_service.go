@@ -68,68 +68,6 @@ type CreateSupportFeatureRequest struct {
 	SupportFeature *entity.SupportFeature
 }
 
-type BulkCreateSupportFeatureRequest struct {
-	AuthParams      *AuthParams
-	SupportFeatures []*entity.SupportFeature
-}
-
-type UpdateSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateSupportFeaturePayload
-}
-
-type DeleteSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type FindSupportFeaturesRequest struct {
-	AuthParams *AuthParams
-	Filter     *mysql.FilterSupportFeaturePayload
-}
-
-type FindOneSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type IsDeletableSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type ImportPreviewSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	File       *multipart.FileHeader
-}
-
-type TemplateImportSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	File       *multipart.FileHeader
-}
-
-type ValidatableString struct {
-	Value   string `json:"value"             validate:"required,min=2,max=50,alpha_space"`
-	Message string `json:"message,omitempty"`
-}
-
-type ValidatableKey struct {
-	Value   string `json:"value"             validate:"required,min=2,max=50,username_chars_allowed"`
-	Message string `json:"message,omitempty"`
-}
-
-type ValidatableBool struct {
-	Value   *bool  `json:"value"             validate:"required,boolean"`
-	Message string `json:"message,omitempty"`
-}
-
-type SupportFeaturePreview struct {
-	Row      int               `json:"row"`
-	Name     ValidatableString `json:"name"      validate:"required"`
-	Key      ValidatableKey    `json:"key"       validate:"required"`
-	IsActive ValidatableBool   `json:"is_active" validate:"required"`
-}
-
 func (s *supportFeatureService) Create(ctx context.Context, req *CreateSupportFeatureRequest) (*entity.SupportFeature, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -182,6 +120,11 @@ func (s *supportFeatureService) Create(ctx context.Context, req *CreateSupportFe
 	}
 
 	return supportFeature, nil
+}
+
+type BulkCreateSupportFeatureRequest struct {
+	AuthParams      *AuthParams
+	SupportFeatures []*entity.SupportFeature
 }
 
 func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateSupportFeatureRequest) ([]*entity.SupportFeature, error) {
@@ -315,6 +258,11 @@ func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateS
 	return supportFeaturesToReturn, nil
 }
 
+type FindSupportFeaturesRequest struct {
+	AuthParams *AuthParams
+	Filter     *mysql.FilterSupportFeaturePayload
+}
+
 func (s *supportFeatureService) Find(ctx context.Context, req *FindSupportFeaturesRequest) ([]*entity.SupportFeature, int, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, 0, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -335,6 +283,11 @@ func (s *supportFeatureService) Find(ctx context.Context, req *FindSupportFeatur
 	}
 
 	return supportFeatures, totalCount, nil
+}
+
+type FindOneSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
 }
 
 func (s *supportFeatureService) FindOne(ctx context.Context, req *FindOneSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -361,6 +314,11 @@ func (s *supportFeatureService) FindOne(ctx context.Context, req *FindOneSupport
 	}
 
 	return supportFeature, nil
+}
+
+type UpdateSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateSupportFeaturePayload
 }
 
 func (s *supportFeatureService) Update(ctx context.Context, req *UpdateSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -391,6 +349,11 @@ func (s *supportFeatureService) Update(ctx context.Context, req *UpdateSupportFe
 	}
 
 	return supportFeature, nil
+}
+
+type DeleteSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
 }
 
 func (s *supportFeatureService) Delete(ctx context.Context, req *DeleteSupportFeatureRequest) error {
@@ -436,6 +399,11 @@ func (s *supportFeatureService) Delete(ctx context.Context, req *DeleteSupportFe
 	return nil
 }
 
+type IsDeletableSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
+}
+
 func (s *supportFeatureService) IsDeletable(ctx context.Context, req *IsDeletableSupportFeatureRequest) (bool, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return false, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -466,6 +434,11 @@ func (s *supportFeatureService) IsDeletable(ctx context.Context, req *IsDeletabl
 	}
 
 	return true, nil
+}
+
+type TemplateImportSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	File       *multipart.FileHeader
 }
 
 func (s *supportFeatureService) TemplateImport(ctx context.Context, req *TemplateImportSupportFeatureRequest) (*FileServiceData, error) {
@@ -779,6 +752,33 @@ func createErrorGuideSheet(f *excelize.File) error {
 	}
 
 	return nil
+}
+
+type ImportPreviewSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	File       *multipart.FileHeader
+}
+
+type ValidatableString struct {
+	Value   string `json:"value"             validate:"required,min=2,max=50,alpha_space"`
+	Message string `json:"message,omitempty"`
+}
+
+type ValidatableKey struct {
+	Value   string `json:"value"             validate:"required,min=2,max=50,username_chars_allowed"`
+	Message string `json:"message,omitempty"`
+}
+
+type ValidatableBool struct {
+	Value   *bool  `json:"value"             validate:"required,boolean"`
+	Message string `json:"message,omitempty"`
+}
+
+type SupportFeaturePreview struct {
+	Row      int               `json:"row"`
+	Name     ValidatableString `json:"name"      validate:"required"`
+	Key      ValidatableKey    `json:"key"       validate:"required"`
+	IsActive ValidatableBool   `json:"is_active" validate:"required"`
 }
 
 func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPreviewSupportFeatureRequest) ([]*SupportFeaturePreview, error) {

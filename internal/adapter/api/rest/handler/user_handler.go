@@ -36,28 +36,6 @@ type CreateUserRequest struct {
 	User CreateUser `json:"user" validate:"required"`
 }
 
-type UpdateUser struct {
-	ID       uint    `validate:"required,gt=0"  param:"id"`
-	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
-	Email    *string `json:"email,omitempty"    validate:"email,min=3,max=100"`
-	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
-	Password *string `json:"password,omitempty" validate:"password,max=200"`
-	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
-}
-
-type UpdateUserRequest struct {
-	User UpdateUser `json:"user" validate:"required"`
-}
-
-type FilterUserRequest struct {
-	IDs       []uint   `validate:"omitempty,dive,gt=0"                           query:"ids"`
-	Usernames []string `validate:"omitemptymin=3,max=100,username_chars_allowed" query:"usernames"`
-	Emails    []string `validate:"email,min=3,max=100"                           query:"emails"`
-	Search    string   `validate:"omitempty,min=1"                               query:"search"`
-	Page      int      `validate:"omitempty,min=1"                               query:"page"`
-	PerPage   int      `validate:"omitempty,min=1,max=100"                       query:"per_page"`
-}
-
 func (h *UserHandler) CreateUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -99,6 +77,15 @@ func (h *UserHandler) CreateUser(c echo.Context) error {
 	data := serializer.SerializeUser(user)
 
 	return response.Success(c, "Create user success", data)
+}
+
+type FilterUserRequest struct {
+	IDs       []uint   `validate:"omitempty,dive,gt=0"                           query:"ids"`
+	Usernames []string `validate:"omitemptymin=3,max=100,username_chars_allowed" query:"usernames"`
+	Emails    []string `validate:"email,min=3,max=100"                           query:"emails"`
+	Search    string   `validate:"omitempty,min=1"                               query:"search"`
+	Page      int      `validate:"omitempty,min=1"                               query:"page"`
+	PerPage   int      `validate:"omitempty,min=1,max=100"                       query:"per_page"`
 }
 
 func (h *UserHandler) FindUsers(c echo.Context) error {
@@ -191,6 +178,19 @@ func (h *UserHandler) FindOneUser(c echo.Context) error {
 	data := serializer.SerializeUser(user)
 
 	return response.Success(c, "Find user success", data)
+}
+
+type UpdateUser struct {
+	ID       uint    `validate:"required,gt=0"  param:"id"`
+	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
+	Email    *string `json:"email,omitempty"    validate:"email,min=3,max=100"`
+	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
+	Password *string `json:"password,omitempty" validate:"password,max=200"`
+	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
+}
+
+type UpdateUserRequest struct {
+	User UpdateUser `json:"user" validate:"required"`
 }
 
 func (h *UserHandler) UpdateUser(c echo.Context) error {
