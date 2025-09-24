@@ -11,6 +11,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ ClientSupportFeatureRepository = (*clientSupportFeatureRepository)(nil)
+
 type ClientSupportFeatureRepository interface {
 	GetTableName() string
 	BulkCreate(ctx context.Context, req []*entity.ClientSupportFeature) ([]*entity.ClientSupportFeature, error)
@@ -22,7 +24,7 @@ type clientSupportFeatureRepository struct {
 	logger logger.Logger
 }
 
-func NewClientSupportFeatureRepository(db bun.IDB, logger logger.Logger) ClientSupportFeatureRepository {
+func NewClientSupportFeatureRepository(db bun.IDB, logger logger.Logger) *clientSupportFeatureRepository {
 	return &clientSupportFeatureRepository{db: db, logger: logger}
 }
 

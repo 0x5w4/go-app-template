@@ -12,6 +12,8 @@ import (
 	p "cloud.google.com/go/pubsub"
 )
 
+var _ PubsubService = (*pubsubService)(nil)
+
 type PubsubService interface {
 	SendToPublisher(ctx context.Context, image string, id uint, modelType string, filename, userLog string) error
 }
@@ -22,7 +24,7 @@ type pubsubService struct {
 	publisher pubsub.Publisher
 }
 
-func NewPubsubService(config *config.Config, logger logger.Logger, publisher pubsub.Publisher) PubsubService {
+func NewPubsubService(config *config.Config, logger logger.Logger, publisher pubsub.Publisher) *pubsubService {
 	return &pubsubService{
 		config:    config,
 		logger:    logger,

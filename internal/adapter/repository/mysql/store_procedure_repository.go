@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"goapptemp/constant"
 	"goapptemp/pkg/logger"
 	"strconv"
 	"strings"
@@ -12,11 +13,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-const (
-	softDeleteColumnName = "deleted_at"
-	keyColumnName        = "key"
-	parentSchema         = "m3s_reeng"
-)
+var _ StoreProcedureRepository = (*storeProcedureRepository)(nil)
 
 type StoreProcedureRepository interface {
 	CheckIfRecordsAreDeletable(ctx context.Context, parentTableName string, parentRecordIDs []uint, ignoreTables string) (map[uint]int, error)
@@ -28,7 +25,7 @@ type storeProcedureRepository struct {
 	logger logger.Logger
 }
 
-func NewStoreProcedureRepository(dbName string, db bun.IDB, logger logger.Logger) StoreProcedureRepository {
+func NewStoreProcedureRepository(dbName string, db bun.IDB, logger logger.Logger) *storeProcedureRepository {
 	return &storeProcedureRepository{dbName: dbName, db: db, logger: logger}
 }
 
@@ -38,7 +35,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 	err := r.db.NewSelect().
 		Column("column_name").
 		Table("information_schema.columns").
-		Where("table_schema = ?", parentSchema).
+		Where("table_schema = ?", constant.ParentSchema).
 		Where("table_name = ?", parentTableName).
 		Where("column_key = 'PRI'").
 		Limit(1).
@@ -82,7 +79,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
        AND kcu.referenced_column_name = ?
    `
 
-	if err := r.db.NewRaw(query, softDeleteColumnName, parentSchema, parentTableName, parentPK).
+	if err := r.db.NewRaw(query, constant.SoftDeleteColumnName, constant.ParentSchema, parentTableName, parentPK).
 		Scan(ctx, &refs); err != nil {
 		return nil, fmt.Errorf("error fetching foreign key references: %w", err)
 	}
@@ -120,7 +117,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 		)
 
 		if ref.HasSoftDelete.Valid && ref.HasSoftDelete.Bool {
-			q += fmt.Sprintf(" AND %s IS NULL", softDeleteColumnName)
+			q += fmt.Sprintf(" AND %s IS NULL", constant.SoftDeleteColumnName)
 		}
 
 		q += " GROUP BY " + ref.ChildFKColumn

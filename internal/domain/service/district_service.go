@@ -13,6 +13,8 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ DistrictService = (*districtService)(nil)
+
 type DistrictService interface {
 	Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error)
 	FindOne(ctx context.Context, req *FindOneDistrictRequest) (*entity.District, error)
@@ -25,7 +27,7 @@ type districtService struct {
 	auth   AuthService
 }
 
-func NewDistrictService(config *config.Config, repo repo.Repository, log logger.Logger, auth AuthService) DistrictService {
+func NewDistrictService(config *config.Config, repo repo.Repository, log logger.Logger, auth AuthService) *districtService {
 	return &districtService{
 		config: config,
 		repo:   repo,

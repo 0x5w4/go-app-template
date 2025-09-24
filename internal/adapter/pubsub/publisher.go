@@ -20,7 +20,7 @@ type publisher struct {
 	topic  *pubsub.Topic
 }
 
-func NewPublisher(logger logger.Logger, pubsub pubsubClient.Pubsub, topicID string) (Publisher, error) {
+func NewPublisher(logger logger.Logger, pubsub pubsubClient.Pubsub, topicID string) (*publisher, error) {
 	topic, err := pubsub.NewPublisher(context.Background(), topicID)
 	if err != nil {
 		return nil, err

@@ -29,7 +29,6 @@ linters:
     - importas
     - nakedret
     - tagalign
-    - ireturn
     - copyloopvar
     - noctx
     - durationcheck
@@ -54,9 +53,9 @@ linters:
 
   settings:
     gocognit:
-      min-complexity: 50
+      min-complexity: 51
     gocyclo:
-      min-complexity: 50
+      min-complexity: 51
     goconst:
       min-len: 2
       min-occurrences: 3

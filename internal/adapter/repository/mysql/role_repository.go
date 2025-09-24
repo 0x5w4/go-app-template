@@ -10,6 +10,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ RoleRepository = (*roleRepository)(nil)
+
 type RoleRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.Role) (*entity.Role, error)
@@ -46,7 +48,7 @@ type roleRepository struct {
 	logger logger.Logger
 }
 
-func NewRoleRepository(db bun.IDB, logger logger.Logger) RoleRepository {
+func NewRoleRepository(db bun.IDB, logger logger.Logger) *roleRepository {
 	return &roleRepository{db: db, logger: logger}
 }
 

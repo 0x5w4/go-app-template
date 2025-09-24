@@ -12,6 +12,8 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ CityService = (*cityService)(nil)
+
 type CityService interface {
 	Find(ctx context.Context, req *FindCitiesRequest) ([]*entity.City, int, error)
 	FindOne(ctx context.Context, req *FindOneCityRequest) (*entity.City, error)
@@ -24,7 +26,7 @@ type cityService struct {
 	auth   AuthService
 }
 
-func NewCityService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService) CityService {
+func NewCityService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService) *cityService {
 	return &cityService{
 		config: config,
 		repo:   repo,

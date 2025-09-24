@@ -24,6 +24,8 @@ import (
 	excelize "github.com/xuri/excelize/v2"
 )
 
+var _ SupportFeatureService = (*supportFeatureService)(nil)
+
 type SupportFeatureService interface {
 	Create(ctx context.Context, req *CreateSupportFeatureRequest) (*entity.SupportFeature, error)
 	BulkCreate(ctx context.Context, req *BulkCreateSupportFeatureRequest) ([]*entity.SupportFeature, error)
@@ -44,7 +46,7 @@ type supportFeatureService struct {
 	validate *validator.Validate
 }
 
-func NewSupportFeatureService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService, validate *validator.Validate) SupportFeatureService {
+func NewSupportFeatureService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService, validate *validator.Validate) *supportFeatureService {
 	return &supportFeatureService{
 		config:   config,
 		repo:     repo,

@@ -90,8 +90,8 @@ func (a *App) Run() error {
 	token, err := token.NewJwtToken(
 		a.config.Token.AccessSecretKey,
 		a.config.Token.RefreshSecretKey,
-		time.Duration(int(a.config.Token.AccessTokenDuration))*time.Minute,
-		time.Duration(int(a.config.Token.RefreshTokenDuration))*time.Minute,
+		time.Duration(a.config.Token.AccessTokenDuration)*time.Minute,
+		time.Duration(a.config.Token.RefreshTokenDuration)*time.Minute,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create token manager: %w", err)
@@ -103,13 +103,9 @@ func (a *App) Run() error {
 		return fmt.Errorf("failed to setup service: %w", err)
 	}
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		service.StaleTaskDetector().Start(ctx)
-	}()
+	})
 
 	// Initialize and start REST server
 	a.restServer, err = rest.NewEchoServer(a.config, a.logger, token, service, repo)

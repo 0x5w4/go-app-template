@@ -13,6 +13,8 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ ProvinceService = (*provinceService)(nil)
+
 type ProvinceService interface {
 	Find(ctx context.Context, req *FindProvincesRequest) ([]*entity.Province, int, error)
 	FindOne(ctx context.Context, req *FindOneProvinceRequest) (*entity.Province, error)
@@ -25,7 +27,7 @@ type provinceService struct {
 	auth   AuthService
 }
 
-func NewProvinceService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) ProvinceService {
+func NewProvinceService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) *provinceService {
 	return &provinceService{
 		config: config,
 		repo:   repo,

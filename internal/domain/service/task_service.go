@@ -11,6 +11,8 @@ import (
 	apm "go.elastic.co/apm/v2"
 )
 
+var _ StaleTaskDetector = (*staleTaskDetector)(nil)
+
 type StaleTaskDetector interface {
 	Start(ctx context.Context)
 }
@@ -21,7 +23,7 @@ type staleTaskDetector struct {
 	logger logger.Logger
 }
 
-func NewStaleTaskDetector(config *config.Config, repo repo.Repository, logger logger.Logger) StaleTaskDetector {
+func NewStaleTaskDetector(config *config.Config, repo repo.Repository, logger logger.Logger) *staleTaskDetector {
 	return &staleTaskDetector{
 		config: config,
 		repo:   repo,

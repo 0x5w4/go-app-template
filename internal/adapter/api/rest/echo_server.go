@@ -32,7 +32,7 @@ type echoServer struct {
 	handler handler.Handler
 }
 
-func NewEchoServer(config *config.Config, logger logger.Logger, token token.Token, service service.Service, repository repository.Repository) (Server, error) {
+func NewEchoServer(config *config.Config, logger logger.Logger, token token.Token, service service.Service, repository repository.Repository) (*echoServer, error) {
 	e := echo.New()
 	e.HideBanner = true
 

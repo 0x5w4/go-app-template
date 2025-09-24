@@ -9,6 +9,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ PermissionRepository = (*permissionRepository)(nil)
+
 type PermissionRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.Permission) (*entity.Permission, error)
@@ -39,7 +41,7 @@ type permissionRepository struct {
 	logger logger.Logger
 }
 
-func NewPermissionRepository(db bun.IDB, logger logger.Logger) PermissionRepository {
+func NewPermissionRepository(db bun.IDB, logger logger.Logger) *permissionRepository {
 	return &permissionRepository{db: db, logger: logger}
 }
 

@@ -46,7 +46,7 @@ type handler struct {
 	webhookHandler        *WebhookHandler
 }
 
-func NewHandler(config *config.Config, logger logger.Logger, service service.Service, db *bun.DB) (Handler, error) {
+func NewHandler(config *config.Config, logger logger.Logger, service service.Service, db *bun.DB) (*handler, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}

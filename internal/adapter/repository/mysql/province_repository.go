@@ -9,6 +9,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ ProvinceRepository = (*provinceRepository)(nil)
+
 type ProvinceRepository interface {
 	FindByID(ctx context.Context, id uint) (*entity.Province, error)
 	Find(ctx context.Context, filter *FilterProvincePayload) ([]*entity.Province, int, error)
@@ -27,7 +29,7 @@ type provinceRepository struct {
 	logger logger.Logger
 }
 
-func NewProvinceRepository(db bun.IDB, logger logger.Logger) ProvinceRepository {
+func NewProvinceRepository(db bun.IDB, logger logger.Logger) *provinceRepository {
 	return &provinceRepository{db: db, logger: logger}
 }
 

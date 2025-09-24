@@ -9,6 +9,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ DistrictRepository = (*districtRepository)(nil)
+
 type DistrictRepository interface {
 	GetTableName() string
 	FindByID(ctx context.Context, id uint) (*entity.District, error)
@@ -29,7 +31,7 @@ type districtRepository struct {
 	logger logger.Logger
 }
 
-func NewDistrictRepository(db bun.IDB, logger logger.Logger) DistrictRepository {
+func NewDistrictRepository(db bun.IDB, logger logger.Logger) *districtRepository {
 	return &districtRepository{db: db, logger: logger}
 }
 

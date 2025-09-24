@@ -1,11 +1,13 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"goapptemp/config"
 	"goapptemp/pkg/db/hook"
 	"goapptemp/pkg/logger"
+	"math"
 	"time"
 
 	migrationFS "goapptemp/migration"
@@ -19,54 +21,58 @@ import (
 	"github.com/uptrace/bun/dialect/mysqldialect"
 )
 
-type BunDB struct {
+var _ BunDB = (*bunDB)(nil)
+
+type BunDB interface {
+	DB() *bun.DB
+	Close() error
+	Migrate() error
+	Reset() error
+}
+
+type bunDB struct {
 	config *config.Config
 	logger logger.Logger
 	db     *bun.DB
 }
 
-func NewBunDB(config *config.Config, logger logger.Logger) (*BunDB, error) {
-	bunDb := &BunDB{
+func NewBunDB(config *config.Config, logger logger.Logger) (*bunDB, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	sqlDB, err := sql.Open("mysql", config.MySQL.DSN)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open mysql connection: %w", err)
+	}
+
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	sqlDB.SetMaxOpenConns(config.MySQL.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(config.MySQL.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(config.MySQL.ConnMaxLifetime) * time.Minute)
+
+	db := bun.NewDB(sqlDB, mysqldialect.New())
+	db.AddQueryHook(hook.NewLoggerHook(
+		hook.WithLogger(logger),
+		hook.WithDebug(config.MySQL.Debug),
+		hook.WithSlowQueryThreshold(time.Duration(config.MySQL.SlowQueryThreshold)*time.Millisecond),
+	))
+	db.AddQueryHook(hook.NewTracerHook())
+
+	return &bunDB{
 		config: config,
 		logger: logger,
-	}
-	if err := bunDb.connect(); err != nil {
-		return nil, err
-	}
-
-	return bunDb, nil
+		db:     db,
+	}, nil
 }
 
-func (d *BunDB) connect() error {
-	sqlDB, err := sql.Open("mysql", d.config.MySQL.DSN)
-	if err != nil {
-		return fmt.Errorf("failed to open mysql connection: %w", err)
-	}
-
-	if err := sqlDB.Ping(); err != nil {
-		return fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	sqlDB.SetMaxOpenConns(d.config.MySQL.MaxOpenConns)
-	sqlDB.SetMaxIdleConns(d.config.MySQL.MaxIdleConns)
-	sqlDB.SetConnMaxLifetime(time.Duration(d.config.MySQL.ConnMaxLifetime) * time.Minute)
-
-	d.db = bun.NewDB(sqlDB, mysqldialect.New())
-	d.db.AddQueryHook(hook.NewLoggerHook(
-		hook.WithLogger(d.logger),
-		hook.WithDebug(d.config.MySQL.Debug),
-		hook.WithSlowQueryThreshold(time.Duration(d.config.MySQL.SlowQueryThreshold)*time.Millisecond),
-	))
-	d.db.AddQueryHook(hook.NewTracerHook())
-
-	return nil
-}
-
-func (d *BunDB) DB() *bun.DB {
+func (d *bunDB) DB() *bun.DB {
 	return d.db
 }
 
-func (d *BunDB) Close() error {
+func (d *bunDB) Close() error {
 	if d.db != nil {
 		return d.db.Close()
 	}
@@ -74,7 +80,7 @@ func (d *BunDB) Close() error {
 	return nil
 }
 
-func (d *BunDB) Migrate() error {
+func (d *bunDB) Migrate() error {
 	sourceInstance, err := iofs.New(migrationFS.FS, ".")
 	if err != nil {
 		return fmt.Errorf("failed to create migration source from embed.FS: %w", err)
@@ -96,10 +102,15 @@ func (d *BunDB) Migrate() error {
 		return fmt.Errorf("failed to get current migration version: %w", err)
 	}
 
+	v, err := safeUintToInt(version)
+	if err != nil {
+		return fmt.Errorf("failed to convert migration version to int: %w", err)
+	}
+
 	if dirty {
 		d.logger.Warn().Msgf("Dirty migration detected at version %d. Forcing clean state.", version)
 
-		if err := m.Force(int(version)); err != nil {
+		if err := m.Force(v); err != nil {
 			return fmt.Errorf("failed to force clean migration state: %w", err)
 		}
 	}
@@ -123,7 +134,7 @@ func (d *BunDB) Migrate() error {
 	return nil
 }
 
-func (d *BunDB) Reset() error {
+func (d *bunDB) Reset() error {
 	sourceInstance, err := iofs.New(migrationFS.FS, ".")
 	if err != nil {
 		return fmt.Errorf("failed to create migration source from embed.FS: %w", err)
@@ -168,4 +179,12 @@ func (d *BunDB) Reset() error {
 	d.logger.Info().Msgf("✅ Migration from version 0 completed successfully. Current version: %d", version)
 
 	return nil
+}
+
+func safeUintToInt(u uint) (int, error) {
+	if u > uint(math.MaxInt) {
+		return 0, fmt.Errorf("value %d exceeds max int", u)
+	}
+
+	return int(u), nil
 }

@@ -9,6 +9,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ CityRepository = (*cityRepository)(nil)
+
 type CityRepository interface {
 	FindByID(ctx context.Context, id uint) (*entity.City, error)
 	Find(ctx context.Context, filter *FilterCityPayload) ([]*entity.City, int, error)
@@ -28,7 +30,7 @@ type cityRepository struct {
 	logger logger.Logger
 }
 
-func NewCityRepository(db bun.IDB, logger logger.Logger) CityRepository {
+func NewCityRepository(db bun.IDB, logger logger.Logger) *cityRepository {
 	return &cityRepository{db: db, logger: logger}
 }
 

@@ -13,6 +13,8 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ UserService = (*userService)(nil)
+
 type UserService interface {
 	Create(ctx context.Context, req *CreateUserRequest) (*entity.User, error)
 	Update(ctx context.Context, req *UpdateUserRequest) (*entity.User, error)
@@ -28,7 +30,7 @@ type userService struct {
 	auth   AuthService
 }
 
-func NewUserService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService) UserService {
+func NewUserService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService) *userService {
 	return &userService{
 		config: config,
 		repo:   repo,

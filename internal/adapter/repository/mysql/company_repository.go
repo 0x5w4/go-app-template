@@ -10,6 +10,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ CompanyRepository = (*companyRepository)(nil)
+
 type CompanyRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.Company) (*entity.Company, error)
@@ -41,7 +43,7 @@ type companyRepository struct {
 	logger logger.Logger
 }
 
-func NewCompanyRepository(db bun.IDB, logger logger.Logger) CompanyRepository {
+func NewCompanyRepository(db bun.IDB, logger logger.Logger) *companyRepository {
 	return &companyRepository{db: db, logger: logger}
 }
 

@@ -11,6 +11,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ SupportFeatureRepository = (*supportFeatureRepository)(nil)
+
 type SupportFeatureRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.SupportFeature) (*entity.SupportFeature, error)
@@ -49,7 +51,7 @@ type supportFeatureRepository struct {
 	logger logger.Logger
 }
 
-func NewSupportFeatureRepository(db bun.IDB, logger logger.Logger) SupportFeatureRepository {
+func NewSupportFeatureRepository(db bun.IDB, logger logger.Logger) *supportFeatureRepository {
 	return &supportFeatureRepository{db: db, logger: logger}
 }
 

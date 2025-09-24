@@ -7,13 +7,14 @@ import (
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
+	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
-
-	serror "goapptemp/internal/domain/service/error"
 )
+
+var _ AuthService = (*authService)(nil)
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (*entity.User, error)
@@ -27,7 +28,7 @@ type authService struct {
 	logger     logger.Logger
 }
 
-func NewAuthService(config *config.Config, token token.Token, repo repository.Repository, log logger.Logger) AuthService {
+func NewAuthService(config *config.Config, token token.Token, repo repository.Repository, log logger.Logger) *authService {
 	return &authService{
 		config:     config,
 		token:      token,

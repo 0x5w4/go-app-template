@@ -13,6 +13,8 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ RoleService = (*roleService)(nil)
+
 type RoleService interface {
 	Create(ctx context.Context, req *CreateRoleRequest) (*entity.Role, error)
 	Update(ctx context.Context, req *UpdateRoleRequest) (*entity.Role, error)
@@ -28,7 +30,7 @@ type roleService struct {
 	auth   AuthService
 }
 
-func NewRoleService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) RoleService {
+func NewRoleService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) *roleService {
 	return &roleService{
 		config: config,
 		repo:   repo,

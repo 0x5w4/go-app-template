@@ -11,6 +11,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ MySQLRepository = (*mysqlRepository)(nil)
+
 type RepositoryAtomicCallback func(r MySQLRepository) error
 
 type MySQLRepository interface {
@@ -46,7 +48,7 @@ type mysqlRepository struct {
 	storeProcedureRepository       StoreProcedureRepository
 }
 
-func NewMySQLRepository(config *config.Config, logger logger.Logger) (MySQLRepository, error) {
+func NewMySQLRepository(config *config.Config, logger logger.Logger) (*mysqlRepository, error) {
 	db, err := db.NewBunDB(config, logger)
 	if err != nil {
 		return nil, err
@@ -99,7 +101,7 @@ func (r *mysqlRepository) Atomic(ctx context.Context, config *config.Config, fn 
 	return nil
 }
 
-func create(config *config.Config, db bun.IDB, logger logger.Logger) MySQLRepository {
+func create(config *config.Config, db bun.IDB, logger logger.Logger) *mysqlRepository {
 	return &mysqlRepository{
 		db:                             db,
 		logger:                         logger,

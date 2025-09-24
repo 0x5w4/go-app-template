@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"goapptemp/config"
+	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/pkg/logger"
 	"strings"
@@ -12,13 +13,11 @@ import (
 	serror "goapptemp/internal/domain/service/error"
 )
 
+var _ WebhookService = (*webhookService)(nil)
+
 type WebhookService interface {
 	UpdateIcon(ctx context.Context, req *UpdateIconRequest) error
 }
-
-const (
-	failedIcon = "failed"
-)
 
 type webhookService struct {
 	config *config.Config
@@ -26,7 +25,7 @@ type webhookService struct {
 	logger logger.Logger
 }
 
-func NewWebhookService(config *config.Config, repo repo.Repository, logger logger.Logger) WebhookService {
+func NewWebhookService(config *config.Config, repo repo.Repository, logger logger.Logger) *webhookService {
 	return &webhookService{
 		config: config,
 		repo:   repo,
@@ -47,7 +46,7 @@ func (s *webhookService) UpdateIcon(ctx context.Context, req *UpdateIconRequest)
 			return serror.TranslateRepoError(err)
 		}
 
-		if *client.Icon == failedIcon || strings.Contains(*client.Icon, "http://") || strings.Contains(*client.Icon, "https://") {
+		if *client.Icon == constant.FailedIcon || strings.Contains(*client.Icon, "http://") || strings.Contains(*client.Icon, "https://") {
 			return nil
 		}
 

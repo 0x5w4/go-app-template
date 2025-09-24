@@ -11,6 +11,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ ClientRepository = (*clientRepository)(nil)
+
 type ClientRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.Client) (*entity.Client, error)
@@ -56,7 +58,7 @@ type clientRepository struct {
 	logger logger.Logger
 }
 
-func NewClientRepository(db bun.IDB, logger logger.Logger) ClientRepository {
+func NewClientRepository(db bun.IDB, logger logger.Logger) *clientRepository {
 	return &clientRepository{db: db, logger: logger}
 }
 

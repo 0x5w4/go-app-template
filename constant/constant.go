@@ -109,4 +109,15 @@ const (
 
 const (
 	ImgMaxSize int = 10 * 1024 * 1024
+	FailedIcon     = "failed"
+)
+
+const (
+	SoftDeleteColumnName = "deleted_at"
+	KeyColumnName        = "key"
+	ParentSchema         = "goapptemp"
+)
+
+const (
+	ClientModelType string = "client"
 )
