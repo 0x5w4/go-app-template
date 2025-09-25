@@ -37,7 +37,7 @@ print-apmenv:
 # ====================================================================================
 
 # Go variables
-BINARY_NAME=m3s-reeng
+BINARY_NAME=go-app-temp
 GO_VERSION ?= $(shell go version)
 
 # Docker variables
@@ -112,12 +112,12 @@ docker-prune: ## 🧹 Clean up unused Docker images, networks, and volumes
 
 run-standalone: ## 🧪 Build and run the app in a standalone Docker container
 	@echo "Stopping and removing existing container (if any)..."
-	docker stop m3s-api-reengineering || true
-	docker rm m3s-api-reengineering || true
+	docker stop go-app-temp || true
+	docker rm go-app-temp || true
 	@echo "Building standalone Docker image..."
-	docker build -t m3s-api-reengineering .
+	docker build -t go-app-temp .
 	@echo "Running container on port 8090..."
-	docker run -d --name m3s-api-reengineering --env-file ./.env -p 8090:8080 m3s-api-reengineering
+	docker run -d --name go-app-temp --env-file ./.env -p 8090:8080 go-app-temp
 
 
 # ====================================================================================
