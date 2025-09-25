@@ -10,7 +10,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -ldflags="-w -s" -a -o /m3s-reeng .
+RUN go build -ldflags="-compressdwarf -extldflags '-static'" -a -o /go-app-temp .
 
 
 FROM alpine:3.22
@@ -22,15 +22,15 @@ ENV TZ=Asia/Jakarta
 
 WORKDIR /app
 
-COPY --from=builder /m3s-reeng /app/m3s-reeng
+COPY --from=builder /go-app-temp /app/go-app-temp
 COPY .env /app/.env
 COPY cred.json /app/cred.json
-RUN mkdir -p internal/adapter/repository/mysql/db/migration
-COPY internal/adapter/repository/mysql/db/migration/* internal/adapter/repository/mysql/db/migration/
+RUN mkdir -p migration
+COPY migration/* migration/
 
 RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 8080
 
-CMD ["/app/m3s-reeng", "run", "-e", "production"]
+CMD ["/app/go-app-temp", "run", "-e", "production"]
