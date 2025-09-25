@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
@@ -14,6 +13,8 @@ import (
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
 )
+
+var _ AuthService = (*authService)(nil)
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (*entity.User, error)
@@ -27,7 +28,7 @@ type authService struct {
 	logger     logger.Logger
 }
 
-func NewAuthService(config *config.Config, token token.Token, repo repository.Repository, log logger.Logger) AuthService {
+func NewAuthService(config *config.Config, token token.Token, repo repository.Repository, log logger.Logger) *authService {
 	return &authService{
 		config:     config,
 		token:      token,
@@ -44,10 +45,6 @@ type AuthParams struct {
 type LoginRequest struct {
 	Username string
 	Password string
-}
-
-type RefreshRequest struct {
-	RefreshToken string
 }
 
 func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.User, error) {
@@ -115,23 +112,31 @@ func (s *authService) AuthorizationCheck(ctx context.Context, userID uint, permi
 	return false, nil
 }
 
+type RefreshRequest struct {
+	RefreshToken string
+}
+
 func (s *authService) Refresh(ctx context.Context, req *RefreshRequest) (*entity.Token, error) {
 	refreshTokenClaims, err := s.token.VerifyRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeUnauthorized, exception.CodeUnauthorized, "invalid refresh token")
 	}
+
 	user, err := s.repository.MySQL().User().FindByID(ctx, refreshTokenClaims.UserID)
 	if err != nil {
 		return nil, serror.TranslateRepoError(err)
 	}
+
 	accessToken, accessExpiresAt, err := s.token.GenerateAccessToken(user.ID)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "failed to generate access token")
 	}
+
 	refreshToken, refreshExpiresAt, err := s.token.GenerateRefreshToken(user.ID)
 	if err != nil {
 		return nil, exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "failed to generate refresh token")
 	}
+
 	return &entity.Token{
 		AccessToken:           accessToken,
 		AccessTokenExpiresAt:  accessExpiresAt,

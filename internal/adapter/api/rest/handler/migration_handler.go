@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/labstack/echo/v4"
+	migrate "github.com/golang-migrate/migrate/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 type MigrationHandler struct {
@@ -30,13 +30,17 @@ func (h *MigrationHandler) GetVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	version, dirty, err := m.Version()
 	if err != nil {
@@ -74,13 +78,17 @@ func (h *MigrationHandler) ForceVersion(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Force(version); err != nil {
 		h.logger.Error().Err(err).Msgf("Failed to force migration version to %d", version)
@@ -123,13 +131,17 @@ func (h *MigrationHandler) Up(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
@@ -152,13 +164,17 @@ func (h *MigrationHandler) Down(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to get migration path"})
 	}
 
-	m, err := migrate.New(migrationPath, h.properties.config.MySQL.MigrateDSN)
+	m, err := migrate.New(migrationPath, h.config.MySQL.MigrateDSN)
 	if err != nil {
 		h.logger.Error().Err(err).Msg("Failed to create migration instance")
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to create migration instance"})
 	}
 
-	defer m.Close()
+	defer func() {
+		if srcErr, dbErr := m.Close(); srcErr != nil || dbErr != nil {
+			h.logger.Error().Err(srcErr).Err(dbErr).Msg("Failed to close migration instance")
+		}
+	}()
 
 	if err := m.Down(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
@@ -189,5 +205,5 @@ func getMigrationPath() (string, error) {
 		return "", fmt.Errorf("migration directory not found at: %s", migrationPath)
 	}
 
-	return fmt.Sprintf("file://%s", migrationPath), nil
+	return "file://" + migrationPath, nil
 }

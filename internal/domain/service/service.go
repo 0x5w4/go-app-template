@@ -9,6 +9,8 @@ import (
 	"goapptemp/pkg/logger"
 )
 
+var _ Service = (*service)(nil)
+
 type Service interface {
 	Token() token.Token
 	Auth() AuthService
@@ -23,7 +25,7 @@ type Service interface {
 	StaleTaskDetector() StaleTaskDetector
 }
 
-type services struct {
+type service struct {
 	tokenManager          token.Token
 	authService           AuthService
 	userService           UserService
@@ -43,8 +45,7 @@ func NewService(
 	logger logger.Logger,
 	token token.Token,
 	publisher pubsub.Publisher,
-) (Service, error) {
-
+) (*service, error) {
 	validate, err := shared.NewValidator()
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func NewService(
 	pubsubService := NewPubsubService(config, logger, publisher)
 	authService := NewAuthService(config, token, repo, logger)
 
-	return &services{
+	return &service{
 		authService:           authService,
 		userService:           NewUserService(config, repo, logger, authService),
 		clientService:         NewClientService(config, repo, logger, authService, pubsubService),
@@ -67,46 +68,46 @@ func NewService(
 	}, nil
 }
 
-func (s *services) Token() token.Token {
+func (s *service) Token() token.Token {
 	return s.tokenManager
 }
 
-func (s *services) Auth() AuthService {
+func (s *service) Auth() AuthService {
 	return s.authService
 }
 
-func (s *services) User() UserService {
+func (s *service) User() UserService {
 	return s.userService
 }
 
-func (s *services) Client() ClientService {
+func (s *service) Client() ClientService {
 	return s.clientService
 }
 
-func (s *services) Role() RoleService {
+func (s *service) Role() RoleService {
 	return s.roleService
 }
 
-func (s *services) SupportFeature() SupportFeatureService {
+func (s *service) SupportFeature() SupportFeatureService {
 	return s.supportFeatureService
 }
 
-func (s *services) Province() ProvinceService {
+func (s *service) Province() ProvinceService {
 	return s.provinceService
 }
 
-func (s *services) City() CityService {
+func (s *service) City() CityService {
 	return s.cityService
 }
 
-func (s *services) District() DistrictService {
+func (s *service) District() DistrictService {
 	return s.districtService
 }
 
-func (s *services) Webhook() WebhookService {
+func (s *service) Webhook() WebhookService {
 	return s.webhookService
 }
 
-func (s *services) StaleTaskDetector() StaleTaskDetector {
+func (s *service) StaleTaskDetector() StaleTaskDetector {
 	return s.staleTaskDetector
 }

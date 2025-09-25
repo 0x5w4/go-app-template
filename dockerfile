@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25.1-alpine3.22 AS builder
 WORKDIR /app
 
 ENV CGO_ENABLED=0
@@ -13,7 +13,7 @@ COPY . .
 RUN go build -ldflags="-w -s" -a -o /m3s-reeng .
 
 
-FROM alpine:3.20
+FROM alpine:3.22
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 

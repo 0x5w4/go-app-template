@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
@@ -10,9 +9,24 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ CityRepository = (*cityRepository)(nil)
+
 type CityRepository interface {
 	FindByID(ctx context.Context, id uint) (*entity.City, error)
 	Find(ctx context.Context, filter *FilterCityPayload) ([]*entity.City, int, error)
+}
+
+type cityRepository struct {
+	db     bun.IDB
+	logger logger.Logger
+}
+
+func NewCityRepository(db bun.IDB, logger logger.Logger) *cityRepository {
+	return &cityRepository{db: db, logger: logger}
+}
+
+func (r *cityRepository) GetTableName() string {
+	return "cities"
 }
 
 type FilterCityPayload struct {
@@ -22,19 +36,6 @@ type FilterCityPayload struct {
 	Search      string
 	Page        int
 	PerPage     int
-}
-
-type cityRepository struct {
-	db     bun.IDB
-	logger logger.Logger
-}
-
-func NewCityRepository(db bun.IDB, logger logger.Logger) CityRepository {
-	return &cityRepository{db: db, logger: logger}
-}
-
-func (r *cityRepository) GetTableName() string {
-	return "cities"
 }
 
 func (r *cityRepository) Find(ctx context.Context, filter *FilterCityPayload) ([]*entity.City, int, error) {

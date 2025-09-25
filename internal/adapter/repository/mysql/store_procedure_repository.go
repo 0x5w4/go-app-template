@@ -4,18 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"goapptemp/constant"
 	"goapptemp/pkg/logger"
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"
 )
 
-const (
-	softDeleteColumnName = "deleted_at"
-	keyColumnName        = "key"
-	parentSchema         = "m3s_reeng"
-)
+var _ StoreProcedureRepository = (*storeProcedureRepository)(nil)
 
 type StoreProcedureRepository interface {
 	CheckIfRecordsAreDeletable(ctx context.Context, parentTableName string, parentRecordIDs []uint, ignoreTables string) (map[uint]int, error)
@@ -27,7 +25,7 @@ type storeProcedureRepository struct {
 	logger logger.Logger
 }
 
-func NewStoreProcedureRepository(dbName string, db bun.IDB, logger logger.Logger) StoreProcedureRepository {
+func NewStoreProcedureRepository(dbName string, db bun.IDB, logger logger.Logger) *storeProcedureRepository {
 	return &storeProcedureRepository{dbName: dbName, db: db, logger: logger}
 }
 
@@ -37,17 +35,21 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 	err := r.db.NewSelect().
 		Column("column_name").
 		Table("information_schema.columns").
-		Where("table_schema = ?", parentSchema).
+		Where("table_schema = ?", constant.ParentSchema).
 		Where("table_name = ?", parentTableName).
 		Where("column_key = 'PRI'").
 		Limit(1).
 		Scan(ctx, &parentPK)
-	if err != nil || parentPK == "" {
-		if err == sql.ErrNoRows {
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("failed to get parent PK for table '%s': primary key not found", parentTableName)
 		}
 
 		return nil, fmt.Errorf("failed to get parent PK for table '%s': %w", parentTableName, err)
+	}
+
+	if parentPK == "" {
+		return nil, fmt.Errorf("failed to get parent PK for table '%s': primary key not found", parentTableName)
 	}
 
 	type FKReference struct {
@@ -77,7 +79,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
        AND kcu.referenced_column_name = ?
    `
 
-	if err := r.db.NewRaw(query, softDeleteColumnName, parentSchema, parentTableName, parentPK).
+	if err := r.db.NewRaw(query, constant.SoftDeleteColumnName, constant.ParentSchema, parentTableName, parentPK).
 		Scan(ctx, &refs); err != nil {
 		return nil, fmt.Errorf("error fetching foreign key references: %w", err)
 	}
@@ -86,7 +88,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 		return make(map[uint]int), nil
 	}
 
-	var idStrings []string = make([]string, 0, len(parentRecordIDs))
+	idStrings := make([]string, 0, len(parentRecordIDs))
 	for _, id := range parentRecordIDs {
 		idStrings = append(idStrings, strconv.FormatUint(uint64(id), 10))
 	}
@@ -96,7 +98,7 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 		return make(map[uint]int), nil
 	}
 
-	var unionQueries []string = make([]string, 0)
+	unionQueries := make([]string, 0)
 
 	for _, ref := range refs {
 		if ignoreTables != "" && strings.Contains(ignoreTables, ref.ChildTable) {
@@ -115,10 +117,10 @@ func (r *storeProcedureRepository) CheckIfRecordsAreDeletable(ctx context.Contex
 		)
 
 		if ref.HasSoftDelete.Valid && ref.HasSoftDelete.Bool {
-			q += fmt.Sprintf(" AND %s IS NULL", softDeleteColumnName)
+			q += fmt.Sprintf(" AND %s IS NULL", constant.SoftDeleteColumnName)
 		}
 
-		q += fmt.Sprintf(" GROUP BY %s", ref.ChildFKColumn)
+		q += " GROUP BY " + ref.ChildFKColumn
 		unionQueries = append(unionQueries, q)
 	}
 

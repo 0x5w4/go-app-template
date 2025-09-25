@@ -3,13 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
-
 	"goapptemp/config"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/pkg/logger"
 
-	"github.com/go-playground/validator/v10"
+	validator "github.com/go-playground/validator/v10"
 	"github.com/uptrace/bun"
 )
 
@@ -47,7 +46,7 @@ type handler struct {
 	webhookHandler        *WebhookHandler
 }
 
-func NewHandler(config *config.Config, logger logger.Logger, service service.Service, db *bun.DB) (Handler, error) {
+func NewHandler(config *config.Config, logger logger.Logger, service service.Service, db *bun.DB) (*handler, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	}

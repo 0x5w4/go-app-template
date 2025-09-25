@@ -4,25 +4,27 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"log"
-	"mime/multipart"
-	"strconv"
-	"strings"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"io"
+	"mime/multipart"
+	"strconv"
+	"strings"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/xuri/excelize/v2"
+	serror "goapptemp/internal/domain/service/error"
+
+	"github.com/cockroachdb/errors"
+	validator "github.com/go-playground/validator/v10"
+	excelize "github.com/xuri/excelize/v2"
 )
+
+var _ SupportFeatureService = (*supportFeatureService)(nil)
 
 type SupportFeatureService interface {
 	Create(ctx context.Context, req *CreateSupportFeatureRequest) (*entity.SupportFeature, error)
@@ -44,7 +46,7 @@ type supportFeatureService struct {
 	validate *validator.Validate
 }
 
-func NewSupportFeatureService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService, validate *validator.Validate) SupportFeatureService {
+func NewSupportFeatureService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService, validate *validator.Validate) *supportFeatureService {
 	return &supportFeatureService{
 		config:   config,
 		repo:     repo,
@@ -64,68 +66,6 @@ type FileServiceData struct {
 type CreateSupportFeatureRequest struct {
 	AuthParams     *AuthParams
 	SupportFeature *entity.SupportFeature
-}
-
-type BulkCreateSupportFeatureRequest struct {
-	AuthParams      *AuthParams
-	SupportFeatures []*entity.SupportFeature
-}
-
-type UpdateSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateSupportFeaturePayload
-}
-
-type DeleteSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type FindSupportFeaturesRequest struct {
-	AuthParams *AuthParams
-	Filter     *mysql.FilterSupportFeaturePayload
-}
-
-type FindOneSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type IsDeletableSupportFeatureRequest struct {
-	AuthParams       *AuthParams
-	SupportFeatureID uint
-}
-
-type ImportPreviewSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	File       *multipart.FileHeader
-}
-
-type TemplateImportSupportFeatureRequest struct {
-	AuthParams *AuthParams
-	File       *multipart.FileHeader
-}
-
-type ValidatableString struct {
-	Value   string `json:"value" validate:"required,min=2,max=50,alpha_space"`
-	Message string `json:"message,omitempty"`
-}
-
-type ValidatableKey struct {
-	Value   string `json:"value" validate:"required,min=2,max=50,username_chars_allowed"`
-	Message string `json:"message,omitempty"`
-}
-
-type ValidatableBool struct {
-	Value   *bool  `json:"value" validate:"required,boolean"`
-	Message string `json:"message,omitempty"`
-}
-
-type SupportFeaturePreview struct {
-	Row      int               `json:"row"`
-	Name     ValidatableString `json:"name" validate:"required"`
-	Key      ValidatableKey    `json:"key" validate:"required"`
-	IsActive ValidatableBool   `json:"is_active" validate:"required"`
 }
 
 func (s *supportFeatureService) Create(ctx context.Context, req *CreateSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -180,6 +120,11 @@ func (s *supportFeatureService) Create(ctx context.Context, req *CreateSupportFe
 	}
 
 	return supportFeature, nil
+}
+
+type BulkCreateSupportFeatureRequest struct {
+	AuthParams      *AuthParams
+	SupportFeatures []*entity.SupportFeature
 }
 
 func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateSupportFeatureRequest) ([]*entity.SupportFeature, error) {
@@ -313,6 +258,11 @@ func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateS
 	return supportFeaturesToReturn, nil
 }
 
+type FindSupportFeaturesRequest struct {
+	AuthParams *AuthParams
+	Filter     *mysql.FilterSupportFeaturePayload
+}
+
 func (s *supportFeatureService) Find(ctx context.Context, req *FindSupportFeaturesRequest) ([]*entity.SupportFeature, int, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, 0, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -333,6 +283,11 @@ func (s *supportFeatureService) Find(ctx context.Context, req *FindSupportFeatur
 	}
 
 	return supportFeatures, totalCount, nil
+}
+
+type FindOneSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
 }
 
 func (s *supportFeatureService) FindOne(ctx context.Context, req *FindOneSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -359,6 +314,11 @@ func (s *supportFeatureService) FindOne(ctx context.Context, req *FindOneSupport
 	}
 
 	return supportFeature, nil
+}
+
+type UpdateSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateSupportFeaturePayload
 }
 
 func (s *supportFeatureService) Update(ctx context.Context, req *UpdateSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -389,6 +349,11 @@ func (s *supportFeatureService) Update(ctx context.Context, req *UpdateSupportFe
 	}
 
 	return supportFeature, nil
+}
+
+type DeleteSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
 }
 
 func (s *supportFeatureService) Delete(ctx context.Context, req *DeleteSupportFeatureRequest) error {
@@ -434,6 +399,11 @@ func (s *supportFeatureService) Delete(ctx context.Context, req *DeleteSupportFe
 	return nil
 }
 
+type IsDeletableSupportFeatureRequest struct {
+	AuthParams       *AuthParams
+	SupportFeatureID uint
+}
+
 func (s *supportFeatureService) IsDeletable(ctx context.Context, req *IsDeletableSupportFeatureRequest) (bool, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return false, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -466,6 +436,11 @@ func (s *supportFeatureService) IsDeletable(ctx context.Context, req *IsDeletabl
 	return true, nil
 }
 
+type TemplateImportSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	File       *multipart.FileHeader
+}
+
 func (s *supportFeatureService) TemplateImport(ctx context.Context, req *TemplateImportSupportFeatureRequest) (*FileServiceData, error) {
 	const (
 		mainSheetName     = "Help Services"
@@ -475,7 +450,7 @@ func (s *supportFeatureService) TemplateImport(ctx context.Context, req *Templat
 		totalRowsToFormat = headerRow + maxDataRows
 	)
 
-	var headers = []struct {
+	headers := []struct {
 		Name         string
 		ColumnLetter string
 		CommentText  string
@@ -506,8 +481,10 @@ func (s *supportFeatureService) TemplateImport(ctx context.Context, req *Templat
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F81BD"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 		Protection: &excelize.Protection{Locked: true},
 	})
@@ -692,8 +669,10 @@ func createErrorGuideSheet(f *excelize.File) error {
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"4F81BD"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Vertical: "center", Horizontal: "center", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 	})
 	if err != nil {
@@ -703,8 +682,10 @@ func createErrorGuideSheet(f *excelize.File) error {
 	cellStyle, err := f.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Vertical: "top", WrapText: true},
 		Border: []excelize.Border{
-			{Type: "left", Color: "D3D3D3", Style: 1}, {Type: "right", Color: "D3D3D3", Style: 1},
-			{Type: "top", Color: "D3D3D3", Style: 1}, {Type: "bottom", Color: "D3D3D3", Style: 1},
+			{Type: "left", Color: "D3D3D3", Style: 1},
+			{Type: "right", Color: "D3D3D3", Style: 1},
+			{Type: "top", Color: "D3D3D3", Style: 1},
+			{Type: "bottom", Color: "D3D3D3", Style: 1},
 		},
 	})
 	if err != nil {
@@ -773,6 +754,33 @@ func createErrorGuideSheet(f *excelize.File) error {
 	return nil
 }
 
+type ImportPreviewSupportFeatureRequest struct {
+	AuthParams *AuthParams
+	File       *multipart.FileHeader
+}
+
+type ValidatableString struct {
+	Value   string `json:"value"             validate:"required,min=2,max=50,alpha_space"`
+	Message string `json:"message,omitempty"`
+}
+
+type ValidatableKey struct {
+	Value   string `json:"value"             validate:"required,min=2,max=50,username_chars_allowed"`
+	Message string `json:"message,omitempty"`
+}
+
+type ValidatableBool struct {
+	Value   *bool  `json:"value"             validate:"required,boolean"`
+	Message string `json:"message,omitempty"`
+}
+
+type SupportFeaturePreview struct {
+	Row      int               `json:"row"`
+	Name     ValidatableString `json:"name"      validate:"required"`
+	Key      ValidatableKey    `json:"key"       validate:"required"`
+	IsActive ValidatableBool   `json:"is_active" validate:"required"`
+}
+
 func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPreviewSupportFeatureRequest) ([]*SupportFeaturePreview, error) {
 	if req.AuthParams == nil || req.AuthParams.AccessTokenClaims == nil {
 		return nil, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -796,7 +804,11 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 		return nil, exception.Wrap(fileOpenErr, exception.TypeInternalError, exception.CodeInternalError, "Failed to open uploaded file")
 	}
 
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			s.logger.Error().Err(err).Msg("Failed to close uploaded file")
+		}
+	}()
 
 	f, excelOpenErr := excelize.OpenReader(src)
 	if excelOpenErr != nil {
@@ -805,7 +817,7 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 
 	defer func() {
 		if err := f.Close(); err != nil {
-			log.Printf("Error closing excel file: %v\n", err)
+			s.logger.Error().Err(err).Msg("Failed to close excel file")
 		}
 	}()
 
@@ -815,8 +827,8 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 	}
 
 	sheetName := sheetList[0]
-	rows, rowsErr := f.GetRows(sheetName)
 
+	rows, rowsErr := f.GetRows(sheetName)
 	if rowsErr != nil {
 		return nil, exception.Wrap(rowsErr, exception.TypeInternalError, exception.CodeInternalError, "Failed to read rows from excel sheet: "+sheetName)
 	}
@@ -902,7 +914,8 @@ func (s *supportFeatureService) ImportPreview(ctx context.Context, req *ImportPr
 
 	for _, sf := range previews {
 		if err := s.validate.Struct(sf); err != nil {
-			if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var validationErrors validator.ValidationErrors
+			if errors.As(err, &validationErrors) {
 				for _, fe := range validationErrors {
 					var message string
 

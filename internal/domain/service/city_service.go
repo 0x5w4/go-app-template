@@ -2,15 +2,17 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	serror "goapptemp/internal/domain/service/error"
 )
+
+var _ CityService = (*cityService)(nil)
 
 type CityService interface {
 	Find(ctx context.Context, req *FindCitiesRequest) ([]*entity.City, int, error)
@@ -24,7 +26,7 @@ type cityService struct {
 	auth   AuthService
 }
 
-func NewCityService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService) CityService {
+func NewCityService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService) *cityService {
 	return &cityService{
 		config: config,
 		repo:   repo,
@@ -37,10 +39,6 @@ type FindCitiesRequest struct {
 	Filter *mysql.FilterCityPayload
 }
 
-type FindOneCityRequest struct {
-	CityID uint
-}
-
 func (s *cityService) Find(ctx context.Context, req *FindCitiesRequest) ([]*entity.City, int, error) {
 	citys, totalCount, err := s.repo.MySQL().City().Find(ctx, req.Filter)
 	if err != nil {
@@ -48,6 +46,10 @@ func (s *cityService) Find(ctx context.Context, req *FindCitiesRequest) ([]*enti
 	}
 
 	return citys, totalCount, nil
+}
+
+type FindOneCityRequest struct {
+	CityID uint
 }
 
 func (s *cityService) FindOne(ctx context.Context, req *FindOneCityRequest) (*entity.City, error) {

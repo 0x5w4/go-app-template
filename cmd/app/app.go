@@ -2,13 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/api/rest"
 	"goapptemp/internal/adapter/pubsub"
@@ -17,8 +12,14 @@ import (
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/db"
 	"goapptemp/pkg/logger"
-	pubsubClient "goapptemp/pkg/pubsub"
 	"goapptemp/pkg/tracer"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
+	pubsubClient "goapptemp/pkg/pubsub"
 )
 
 type App struct {
@@ -31,11 +32,11 @@ type App struct {
 
 func NewApp(config *config.Config, logger logger.Logger) (*App, error) {
 	if config == nil {
-		return nil, fmt.Errorf("configuration cannot be nil")
+		return nil, errors.New("configuration cannot be nil")
 	}
 
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, errors.New("logger cannot be nil")
 	}
 
 	return &App{
@@ -48,8 +49,10 @@ func (a *App) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	var wg sync.WaitGroup
-	var err error
+	var (
+		wg  sync.WaitGroup
+		err error
+	)
 
 	// Initialize tracer
 	a.tracer, err = tracer.NewApmTracer(&tracer.Config{
@@ -87,8 +90,8 @@ func (a *App) Run() error {
 	token, err := token.NewJwtToken(
 		a.config.Token.AccessSecretKey,
 		a.config.Token.RefreshSecretKey,
-		time.Duration(int(a.config.Token.AccessTokenDuration))*time.Minute,
-		time.Duration(int(a.config.Token.RefreshTokenDuration))*time.Minute,
+		time.Duration(a.config.Token.AccessTokenDuration)*time.Minute,
+		time.Duration(a.config.Token.RefreshTokenDuration)*time.Minute,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create token manager: %w", err)
@@ -100,12 +103,9 @@ func (a *App) Run() error {
 		return fmt.Errorf("failed to setup service: %w", err)
 	}
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		service.StaleTaskDetector().Start(ctx)
-	}()
+	})
 
 	// Initialize and start REST server
 	a.restServer, err = rest.NewEchoServer(a.config, a.logger, token, service, repo)
@@ -116,6 +116,7 @@ func (a *App) Run() error {
 	if err := a.restServer.Start(); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+
 	a.logger.Info().Msgf("Server started at %s:%d", a.config.HTTP.Host, a.config.HTTP.Port)
 
 	// Wait for shutdown signal
@@ -163,7 +164,12 @@ func (a *App) Migrate(reset bool) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			a.logger.Error().Err(err).Msg("Failed to close database connection")
+		}
+	}()
 
 	if reset {
 		if err := db.Reset(); err != nil {

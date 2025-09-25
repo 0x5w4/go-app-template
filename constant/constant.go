@@ -87,22 +87,37 @@ const (
 )
 
 const (
-	EnvironmentLocal       = "local"
-	EnvironmentDevelopment = "development"
-	EnvironmentStaging     = "staging"
-	EnvironmentSandbox     = "sandbox"
-	EnvironmentProduction  = "production"
+	EnvironmentLocal       string = "local"
+	EnvironmentDevelopment string = "development"
+	EnvironmentStaging     string = "staging"
+	EnvironmentSandbox     string = "sandbox"
+	EnvironmentProduction  string = "production"
 )
 
 const (
-	SubLoggerCtxKey   = "sub_logger"
-	AuthPayloadCtxKey = "auth_payload"
-	RequestIDCtxKey   = "request_id"
-	TraceIDCtxKey     = "trace_id"
+	SubLoggerCtxKey   string = "sub_logger"
+	AuthPayloadCtxKey string = "auth_payload"
+	RequestIDCtxKey   string = "request_id"
+	TraceIDCtxKey     string = "trace_id"
 )
 
 const (
-	TOKEN_TYPE            = "Bearer"
-	TOKEN_MIN_SECRET_SIZE = 32
-	TOKEN_ISSUER          = "goapptemp-auth"
+	TOKEN_TYPE            string = "Bearer"
+	TOKEN_MIN_SECRET_SIZE int    = 32
+	TOKEN_ISSUER          string = "goapptemp-auth"
+)
+
+const (
+	ImgMaxSize int = 10 * 1024 * 1024
+	FailedIcon     = "failed"
+)
+
+const (
+	SoftDeleteColumnName = "deleted_at"
+	KeyColumnName        = "key"
+	ParentSchema         = "goapptemp"
+)
+
+const (
+	ClientModelType string = "client"
 )

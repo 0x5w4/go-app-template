@@ -2,10 +2,6 @@ package service
 
 import (
 	"context"
-	"strconv"
-	"strings"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
@@ -15,7 +11,12 @@ import (
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"strconv"
+	"strings"
+	"time"
 )
+
+var _ ClientService = (*clientService)(nil)
 
 type ClientService interface {
 	Create(ctx context.Context, req *CreateClientRequest) (*entity.Client, error)
@@ -26,10 +27,6 @@ type ClientService interface {
 	IsDeletable(ctx context.Context, req *IsDeletableClientRequest) (bool, error)
 }
 
-const (
-	clientModelType string = "client"
-)
-
 type clientService struct {
 	config *config.Config
 	repo   repository.Repository
@@ -38,7 +35,7 @@ type clientService struct {
 	pubsub PubsubService
 }
 
-func NewClientService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService, pubsub PubsubService) ClientService {
+func NewClientService(config *config.Config, repo repository.Repository, log logger.Logger, auth AuthService, pubsub PubsubService) *clientService {
 	return &clientService{
 		config: config,
 		repo:   repo,
@@ -51,31 +48,6 @@ func NewClientService(config *config.Config, repo repository.Repository, log log
 type CreateClientRequest struct {
 	AuthParams *AuthParams
 	Client     *entity.Client
-}
-
-type UpdateClientRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateClientPayload
-}
-
-type DeleteClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
-}
-
-type FindClientsRequest struct {
-	AuthParams *AuthParams
-	Filter     *mysql.FilterClientPayload
-}
-
-type FindOneClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
-}
-
-type IsDeletableClientRequest struct {
-	AuthParams *AuthParams
-	ClientID   uint
 }
 
 func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*entity.Client, error) {
@@ -109,7 +81,7 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 		now := time.Now()
 		req.Client.IconUpdatedAt = &now
 
-		if len(iconBase64) >= shared.ImgMaxSize {
+		if len(iconBase64) >= constant.ImgMaxSize {
 			return nil, exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Icon data too large")
 		}
 
@@ -159,7 +131,7 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 			fileName := strconv.FormatUint(uint64(createdClient.ID), 10) + "_" + time.Now().Format("20060102_150405") + "." + format
 			userLog := strconv.FormatUint(uint64(req.AuthParams.AccessTokenClaims.UserID), 10)
 
-			if err := s.pubsub.SendToPublisher(ctx, iconBase64, createdClient.ID, clientModelType, fileName, userLog); err != nil {
+			if err := s.pubsub.SendToPublisher(ctx, iconBase64, createdClient.ID, constant.ClientModelType, fileName, userLog); err != nil {
 				return err
 			}
 		}
@@ -173,6 +145,11 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 	createdClient.ClientSupportFeatures = nil
 
 	return createdClient, nil
+}
+
+type FindClientsRequest struct {
+	AuthParams *AuthParams
+	Filter     *mysql.FilterClientPayload
 }
 
 func (s *clientService) Find(ctx context.Context, req *FindClientsRequest) ([]*entity.Client, int, error) {
@@ -195,6 +172,11 @@ func (s *clientService) Find(ctx context.Context, req *FindClientsRequest) ([]*e
 	}
 
 	return clients, totalCount, nil
+}
+
+type FindOneClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
 }
 
 func (s *clientService) FindOne(ctx context.Context, req *FindOneClientRequest) (*entity.Client, error) {
@@ -221,6 +203,11 @@ func (s *clientService) FindOne(ctx context.Context, req *FindOneClientRequest) 
 	}
 
 	return client, nil
+}
+
+type UpdateClientRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateClientPayload
 }
 
 func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*entity.Client, error) {
@@ -262,7 +249,7 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 			isIconBase64 = true
 
 			iconBase64 = iconValue
-			if len(iconBase64) >= shared.ImgMaxSize {
+			if len(iconBase64) >= constant.ImgMaxSize {
 				return nil, exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Icon base64 data too large")
 			}
 
@@ -300,7 +287,7 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 			fileName := strconv.FormatUint(uint64(updatedClient.ID), 10) + "_" + time.Now().Format("20060102_150405") + "." + format
 			userLog := strconv.FormatUint(uint64(req.AuthParams.AccessTokenClaims.UserID), 10)
 
-			if err = s.pubsub.SendToPublisher(ctx, iconBase64, updatedClient.ID, clientModelType, fileName, userLog); err != nil {
+			if err = s.pubsub.SendToPublisher(ctx, iconBase64, updatedClient.ID, constant.ClientModelType, fileName, userLog); err != nil {
 				return err
 			}
 		}
@@ -314,6 +301,11 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 	updatedClient.ClientSupportFeatures = nil
 
 	return updatedClient, nil
+}
+
+type DeleteClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
 }
 
 func (s *clientService) Delete(ctx context.Context, req *DeleteClientRequest) error {
@@ -362,6 +354,11 @@ func (s *clientService) Delete(ctx context.Context, req *DeleteClientRequest) er
 	}
 
 	return nil
+}
+
+type IsDeletableClientRequest struct {
+	AuthParams *AuthParams
+	ClientID   uint
 }
 
 func (s *clientService) IsDeletable(ctx context.Context, req *IsDeletableClientRequest) (bool, error) {

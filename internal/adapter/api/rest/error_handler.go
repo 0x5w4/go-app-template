@@ -1,16 +1,15 @@
 package rest
 
 import (
-	"net/http"
-
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"net/http"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/echo/v4"
-	"go.elastic.co/apm/v2"
+	echo "github.com/labstack/echo/v4"
+	apm "go.elastic.co/apm/v2"
 )
 
 func (s *echoServer) httpErrorHandler(err error, c echo.Context) {
@@ -117,15 +116,11 @@ func buildErrorPayload(ex *exception.Exception, initialStatusCode int, forceGene
 		case exception.TypeQueryError, exception.TypeInternalError:
 			statusCode = http.StatusInternalServerError
 		default:
-			statusCode = 0
-		}
-	}
-
-	if statusCode == 0 {
-		if initialStatusCode > 0 {
-			statusCode = initialStatusCode
-		} else {
-			statusCode = http.StatusInternalServerError
+			if initialStatusCode > 0 {
+				statusCode = initialStatusCode
+			} else {
+				statusCode = http.StatusInternalServerError
+			}
 		}
 	}
 
@@ -162,9 +157,9 @@ func buildErrorPayload(ex *exception.Exception, initialStatusCode int, forceGene
 		default:
 			if statusCode >= http.StatusInternalServerError {
 				message, defaultType = "An internal server error occurred.", exception.TypeInternalError
+			} else {
+				message, defaultType = "", ""
 			}
-
-			message, defaultType = "", ""
 		}
 
 		detail := map[string]any{"request_id": requestID}

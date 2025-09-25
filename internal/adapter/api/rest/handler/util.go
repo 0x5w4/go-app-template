@@ -1,20 +1,18 @@
 package handler
 
 import (
-	"fmt"
-	"strconv"
-
 	"goapptemp/constant"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/exception"
+	"strconv"
 
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 func parseUintParam(c echo.Context, paramName string) (uint, error) {
 	idStr := c.Param(paramName)
 	if idStr == "" {
-		msg := fmt.Sprintf("%s is required in URL path", paramName)
+		msg := paramName + " is required in URL path"
 		err := exception.New(exception.TypeBadRequest, exception.CodeValidationFailed, msg)
 
 		return 0, exception.WithFieldError(err, paramName, msg)
@@ -22,7 +20,7 @@ func parseUintParam(c echo.Context, paramName string) (uint, error) {
 
 	id, parseErr := strconv.ParseUint(idStr, 10, 32)
 	if parseErr != nil || id == 0 {
-		msg := fmt.Sprintf("%s must be a positive integer in URL path", paramName)
+		msg := paramName + " must be a positive integer in URL path"
 		err := exception.Wrap(parseErr, exception.TypeBadRequest, exception.CodeValidationFailed, msg)
 
 		return 0, exception.WithFieldError(err, paramName, msg)

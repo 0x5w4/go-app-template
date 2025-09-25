@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"goapptemp/config"
+	"goapptemp/pkg/logger"
 	"time"
 
-	"goapptemp/config"
 	repo "goapptemp/internal/adapter/repository"
-	"goapptemp/pkg/logger"
 
-	"go.elastic.co/apm/v2"
+	apm "go.elastic.co/apm/v2"
 )
+
+var _ StaleTaskDetector = (*staleTaskDetector)(nil)
 
 type StaleTaskDetector interface {
 	Start(ctx context.Context)
@@ -21,7 +23,7 @@ type staleTaskDetector struct {
 	logger logger.Logger
 }
 
-func NewStaleTaskDetector(config *config.Config, repo repo.Repository, logger logger.Logger) StaleTaskDetector {
+func NewStaleTaskDetector(config *config.Config, repo repo.Repository, logger logger.Logger) *staleTaskDetector {
 	return &staleTaskDetector{
 		config: config,
 		repo:   repo,

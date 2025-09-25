@@ -3,13 +3,12 @@ package hook
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"goapptemp/constant"
+	"goapptemp/pkg/logger"
 	"strings"
 	"time"
 
-	"goapptemp/constant"
-	"goapptemp/pkg/logger"
-
+	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -77,15 +76,16 @@ func (h *LoggerHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
 
 	var logEvent logger.LogEvent
 
-	if event.Err != nil {
+	switch {
+	case event.Err != nil:
 		if errors.Is(event.Err, sql.ErrNoRows) || errors.Is(event.Err, sql.ErrTxDone) {
 			logEvent = subLogger.Info().Err(event.Err)
 		} else {
 			logEvent = subLogger.Error().Err(event.Err)
 		}
-	} else if duration > h.slowQueryThreshold {
+	case duration > h.slowQueryThreshold:
 		logEvent = subLogger.Warn()
-	} else {
+	default:
 		logEvent = subLogger.Debug()
 	}
 

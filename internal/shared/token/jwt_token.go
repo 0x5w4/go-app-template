@@ -1,12 +1,14 @@
 package token
 
 import (
+	"errors"
 	"fmt"
 	"goapptemp/constant"
 	"goapptemp/internal/shared"
+	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type Token interface {
@@ -29,7 +31,7 @@ func NewJwtToken(accessSecretKey, refreshSecretKey string, accessTokenDuration, 
 	}
 
 	if accessTokenDuration <= 0 || refreshTokenDuration <= 0 {
-		return nil, fmt.Errorf("invalid token duration: must be greater than 0")
+		return nil, errors.New("invalid token duration: must be greater than 0")
 	}
 
 	return &jwtToken{
@@ -64,12 +66,13 @@ func (j *jwtToken) GenerateAccessToken(userID uint) (string, time.Time, error) {
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    constant.TOKEN_ISSUER,
-			Subject:   fmt.Sprintf("%d", userID),
+			Subject:   strconv.FormatUint(uint64(userID), 10),
 			ID:        uuidStr,
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString([]byte(j.accessSecretKey))
 	if err != nil {
 		return "", time.Time{}, err
@@ -92,12 +95,13 @@ func (j *jwtToken) GenerateRefreshToken(userID uint) (string, time.Time, error) 
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    constant.TOKEN_ISSUER,
-			Subject:   fmt.Sprintf("%d", userID),
+			Subject:   strconv.FormatUint(uint64(userID), 10),
 			ID:        uuidStr,
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString([]byte(j.refreshSecretKey))
 	if err != nil {
 		return "", time.Time{}, err
@@ -111,22 +115,24 @@ func (j *jwtToken) VerifyAccessToken(tokenStr string) (*AccessTokenClaims, error
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+
 		return []byte(j.accessSecretKey), nil
 	})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			return nil, fmt.Errorf("invalid access token signature")
+		if errors.Is(err, jwt.ErrSignatureInvalid) {
+			return nil, errors.New("invalid access token signature")
 		}
-		return nil, fmt.Errorf("invalid access token")
+
+		return nil, errors.New("invalid access token")
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("invalid access token")
+		return nil, errors.New("invalid access token")
 	}
 
 	claims, ok := token.Claims.(*AccessTokenClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid access token claims")
+		return nil, errors.New("invalid access token claims")
 	}
 
 	return claims, nil
@@ -137,22 +143,24 @@ func (j *jwtToken) VerifyRefreshToken(tokenStr string) (*RefreshTokenClaims, err
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+
 		return []byte(j.accessSecretKey), nil
 	})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			return nil, fmt.Errorf("invalid refresh token signature")
+		if errors.Is(err, jwt.ErrSignatureInvalid) {
+			return nil, errors.New("invalid refresh token signature")
 		}
-		return nil, fmt.Errorf("invalid refresh token")
+
+		return nil, errors.New("invalid refresh token")
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("invalid refresh token")
+		return nil, errors.New("invalid refresh token")
 	}
 
 	claims, ok := token.Claims.(*RefreshTokenClaims)
 	if !ok {
-		return nil, fmt.Errorf("invalid refresh token claims")
+		return nil, errors.New("invalid refresh token claims")
 	}
 
 	return claims, nil

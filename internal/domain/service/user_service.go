@@ -2,16 +2,18 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	serror "goapptemp/internal/domain/service/error"
 )
+
+var _ UserService = (*userService)(nil)
 
 type UserService interface {
 	Create(ctx context.Context, req *CreateUserRequest) (*entity.User, error)
@@ -28,7 +30,7 @@ type userService struct {
 	auth   AuthService
 }
 
-func NewUserService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService) UserService {
+func NewUserService(config *config.Config, repo repository.Repository, logger logger.Logger, auth AuthService) *userService {
 	return &userService{
 		config: config,
 		repo:   repo,
@@ -40,26 +42,6 @@ func NewUserService(config *config.Config, repo repository.Repository, logger lo
 type CreateUserRequest struct {
 	AuthParams *AuthParams
 	User       *entity.User
-}
-
-type UpdateUserRequest struct {
-	AuthParams *AuthParams
-	Update     *mysql.UpdateUserPayload
-}
-
-type DeleteUserRequest struct {
-	AuthParams *AuthParams
-	UserID     uint
-}
-
-type FindUserRequest struct {
-	AuthParams *AuthParams
-	UserFilter *mysql.FilterUserPayload
-}
-
-type FindOneUserRequest struct {
-	AuthParams *AuthParams
-	UserID     uint
 }
 
 func (s *userService) Create(ctx context.Context, req *CreateUserRequest) (*entity.User, error) {
@@ -113,6 +95,11 @@ func (s *userService) Create(ctx context.Context, req *CreateUserRequest) (*enti
 	}
 
 	return user, nil
+}
+
+type UpdateUserRequest struct {
+	AuthParams *AuthParams
+	Update     *mysql.UpdateUserPayload
 }
 
 func (s *userService) Update(ctx context.Context, req *UpdateUserRequest) (*entity.User, error) {
@@ -192,6 +179,11 @@ func (s *userService) Update(ctx context.Context, req *UpdateUserRequest) (*enti
 	return user, nil
 }
 
+type DeleteUserRequest struct {
+	AuthParams *AuthParams
+	UserID     uint
+}
+
 func (s *userService) Delete(ctx context.Context, req *DeleteUserRequest) error {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -221,6 +213,11 @@ func (s *userService) Delete(ctx context.Context, req *DeleteUserRequest) error 
 	return nil
 }
 
+type FindUserRequest struct {
+	AuthParams *AuthParams
+	UserFilter *mysql.FilterUserPayload
+}
+
 func (s *userService) Find(ctx context.Context, req *FindUserRequest) ([]*entity.User, int, error) {
 	if req.AuthParams.AccessTokenClaims == nil {
 		return nil, 0, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "Token payload not provided")
@@ -245,6 +242,11 @@ func (s *userService) Find(ctx context.Context, req *FindUserRequest) ([]*entity
 	}
 
 	return users, totalCount, nil
+}
+
+type FindOneUserRequest struct {
+	AuthParams *AuthParams
+	UserID     uint
 }
 
 func (s *userService) FindOne(ctx context.Context, req *FindOneUserRequest) (*entity.User, error) {

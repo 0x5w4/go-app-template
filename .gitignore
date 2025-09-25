@@ -22,3 +22,6 @@ cred.json
 # Logs
 logs/*.log
 logging-stack/*
+
+# Golangci-lint reports
+reports/*

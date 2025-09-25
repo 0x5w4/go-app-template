@@ -1,10 +1,11 @@
 package tracer
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 
-	"go.elastic.co/apm/v2"
+	apm "go.elastic.co/apm/v2"
 	"go.elastic.co/apm/v2/transport"
 )
 
@@ -28,11 +29,11 @@ type Config struct {
 
 func NewApmTracer(config *Config) (Tracer, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config is required")
+		return nil, errors.New("config is required")
 	}
 
 	if config.ServiceName == "" || config.ServerURL == "" || config.ServiceVersion == "" {
-		return nil, fmt.Errorf("service name, server URL, and service version are required")
+		return nil, errors.New("service name, server URL, and service version are required")
 	}
 
 	parsedURL, err := url.Parse(config.ServerURL)

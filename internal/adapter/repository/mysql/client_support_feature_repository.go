@@ -3,13 +3,15 @@ package mysql
 import (
 	"context"
 	"database/sql"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
 
+	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"
 )
+
+var _ ClientSupportFeatureRepository = (*clientSupportFeatureRepository)(nil)
 
 type ClientSupportFeatureRepository interface {
 	GetTableName() string
@@ -22,7 +24,7 @@ type clientSupportFeatureRepository struct {
 	logger logger.Logger
 }
 
-func NewClientSupportFeatureRepository(db bun.IDB, logger logger.Logger) ClientSupportFeatureRepository {
+func NewClientSupportFeatureRepository(db bun.IDB, logger logger.Logger) *clientSupportFeatureRepository {
 	return &clientSupportFeatureRepository{db: db, logger: logger}
 }
 
@@ -49,7 +51,7 @@ func (r *clientSupportFeatureRepository) DeleteByClientID(ctx context.Context, c
 	}
 
 	_, err := r.db.NewDelete().Model((*model.ClientSupportFeature)(nil)).Where("client_id = ?", clientID).Exec(ctx)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return handleDBError(err, r.GetTableName(), "delete client support feature")
 	}
 

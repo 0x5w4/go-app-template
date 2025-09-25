@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
@@ -10,9 +9,24 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ ProvinceRepository = (*provinceRepository)(nil)
+
 type ProvinceRepository interface {
 	FindByID(ctx context.Context, id uint) (*entity.Province, error)
 	Find(ctx context.Context, filter *FilterProvincePayload) ([]*entity.Province, int, error)
+}
+
+type provinceRepository struct {
+	db     bun.IDB
+	logger logger.Logger
+}
+
+func NewProvinceRepository(db bun.IDB, logger logger.Logger) *provinceRepository {
+	return &provinceRepository{db: db, logger: logger}
+}
+
+func (r *provinceRepository) GetTableName() string {
+	return "provinces"
 }
 
 type FilterProvincePayload struct {
@@ -21,19 +35,6 @@ type FilterProvincePayload struct {
 	Search  string
 	Page    int
 	PerPage int
-}
-
-type provinceRepository struct {
-	db     bun.IDB
-	logger logger.Logger
-}
-
-func NewProvinceRepository(db bun.IDB, logger logger.Logger) ProvinceRepository {
-	return &provinceRepository{db: db, logger: logger}
-}
-
-func (r *provinceRepository) GetTableName() string {
-	return "provinces"
 }
 
 func (r *provinceRepository) Find(ctx context.Context, filter *FilterProvincePayload) ([]*entity.Province, int, error) {

@@ -1,10 +1,6 @@
 package handler
 
 import (
-	"io"
-	"strconv"
-	"strings"
-
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/adapter/repository/mysql"
@@ -12,10 +8,13 @@ import (
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
+	"io"
+	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	validator "github.com/go-playground/validator/v10"
+	echo "github.com/labstack/echo/v4"
 )
 
 type SupportFeatureHandler struct {
@@ -29,39 +28,13 @@ func NewSupportFeatureHandler(properties properties) *SupportFeatureHandler {
 }
 
 type CreateSupportFeature struct {
-	Name     string `json:"name" validate:"required,min=2,max=32,alpha_space"`
-	Key      string `json:"key" validate:"required,min=2,max=32,username_chars_allowed"`
+	Name     string `json:"name"      validate:"required,min=2,max=32,alpha_space"`
+	Key      string `json:"key"       validate:"required,min=2,max=32,username_chars_allowed"`
 	IsActive bool   `json:"is_active"`
 }
 
 type CreateSupportFeatureRequest struct {
 	SupportFeature CreateSupportFeature `json:"help_service" validate:"required"`
-}
-
-type BulkCreateSupportFeatureRequest struct {
-	SupportFeatures []CreateSupportFeature `json:"help_services" validate:"required,dive"`
-}
-
-type UpdateSupportFeature struct {
-	ID       uint    `param:"id" validate:"required,gt=0"`
-	Name     *string `json:"name,omitempty" validate:"omitempty,min=2,max=32,alpha_space"`
-	Key      *string `json:"key,omitempty" validate:"omitempty,min=2,max=32,username_chars_allowed"`
-	IsActive *bool   `json:"is_active,omitempty"`
-}
-
-type UpdateSupportFeatureRequest struct {
-	SupportFeature UpdateSupportFeature `json:"help_service" validate:"required"`
-}
-
-type FilterSupportFeatureRequest struct {
-	IDs      []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Codes    []string `query:"codes" validate:"omitempty,dive,min=2,max=50,alphanum"`
-	Names    []string `query:"names" validate:"omitempty,dive,min=2,max=32,alpha_space"`
-	Keys     []string `query:"keys" validate:"omitempty,dive,min=2,max=32,username_chars_allowed"`
-	IsActive *bool    `query:"is_active" validate:"omitempty"`
-	Search   string   `query:"search" validate:"omitempty,min=1"`
-	Page     int      `query:"page" validate:"omitempty,min=1"`
-	PerPage  int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
 func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {
@@ -104,6 +77,10 @@ func (h *SupportFeatureHandler) CreateSupportFeature(c echo.Context) error {
 	data := serializer.SerializeSupportFeature(supportFeature)
 
 	return response.Success(c, "Create help service success", data)
+}
+
+type BulkCreateSupportFeatureRequest struct {
+	SupportFeatures []CreateSupportFeature `json:"help_services" validate:"required,dive"`
 }
 
 func (h *SupportFeatureHandler) BulkCreateSupportFeatures(c echo.Context) error {
@@ -161,6 +138,17 @@ func (h *SupportFeatureHandler) BulkCreateSupportFeatures(c echo.Context) error 
 	data := serializer.SerializeSupportFeatures(supportFeatures)
 
 	return response.Success(c, "Bulk create help service success", data)
+}
+
+type FilterSupportFeatureRequest struct {
+	IDs      []uint   `validate:"omitempty,dive,gt=0"                                query:"ids"`
+	Codes    []string `validate:"omitempty,dive,min=2,max=50,alphanum"               query:"codes"`
+	Names    []string `validate:"omitempty,dive,min=2,max=32,alpha_space"            query:"names"`
+	Keys     []string `validate:"omitempty,dive,min=2,max=32,username_chars_allowed" query:"keys"`
+	IsActive *bool    `validate:"omitempty"                                          query:"is_active"`
+	Search   string   `validate:"omitempty,min=1"                                    query:"search"`
+	Page     int      `validate:"omitempty,min=1"                                    query:"page"`
+	PerPage  int      `validate:"omitempty,min=1,max=100"                            query:"per_page"`
 }
 
 func (h *SupportFeatureHandler) FindSupportFeatures(c echo.Context) error {
@@ -255,6 +243,17 @@ func (h *SupportFeatureHandler) FindOneSupportFeature(c echo.Context) error {
 	data := serializer.SerializeSupportFeature(supportFeature)
 
 	return response.Success(c, "Find one help service success", data)
+}
+
+type UpdateSupportFeature struct {
+	ID       uint    `validate:"required,gt=0"   param:"id"`
+	Name     *string `json:"name,omitempty"      validate:"omitempty,min=2,max=32,alpha_space"`
+	Key      *string `json:"key,omitempty"       validate:"omitempty,min=2,max=32,username_chars_allowed"`
+	IsActive *bool   `json:"is_active,omitempty"`
+}
+
+type UpdateSupportFeatureRequest struct {
+	SupportFeature UpdateSupportFeature `json:"help_service" validate:"required"`
 }
 
 func (h *SupportFeatureHandler) UpdateSupportFeature(c echo.Context) error {

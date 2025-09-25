@@ -3,15 +3,16 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/pubsub"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+	"strconv"
 
 	p "cloud.google.com/go/pubsub"
 )
+
+var _ PubsubService = (*pubsubService)(nil)
 
 type PubsubService interface {
 	SendToPublisher(ctx context.Context, image string, id uint, modelType string, filename, userLog string) error
@@ -23,7 +24,7 @@ type pubsubService struct {
 	publisher pubsub.Publisher
 }
 
-func NewPubsubService(config *config.Config, logger logger.Logger, publisher pubsub.Publisher) PubsubService {
+func NewPubsubService(config *config.Config, logger logger.Logger, publisher pubsub.Publisher) *pubsubService {
 	return &pubsubService{
 		config:    config,
 		logger:    logger,
@@ -47,7 +48,7 @@ type PubImageReq struct {
 }
 
 func (s *pubsubService) SendToPublisher(ctx context.Context, image string, id uint, modelType string, filename, userLog string) error {
-	url := s.config.HTTP.DomainName + "/api/v1/webhook/update-icon?id=" + fmt.Sprintf("%v", id) + "&type=" + fmt.Sprintf("%v", modelType)
+	url := s.config.HTTP.DomainName + "/api/v1/webhook/update-icon?id=" + strconv.FormatUint(uint64(id), 10) + "&type=" + modelType
 	payload := PubImageReq{
 		WebhookURL: url,
 		Image:      image,

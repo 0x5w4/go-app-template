@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"slices"
-	"strings"
-
 	"goapptemp/cmd/app"
 	"goapptemp/config"
 	"goapptemp/pkg/logger"
+	"os"
+	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

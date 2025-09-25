@@ -10,6 +10,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ UserRepository = (*userRepository)(nil)
+
 type UserRepository interface {
 	GetTableName() string
 	Create(ctx context.Context, req *entity.User) (*entity.User, error)
@@ -22,31 +24,12 @@ type UserRepository interface {
 	SyncRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error)
 }
 
-type UpdateUserPayload struct {
-	ID       uint
-	RoleIDs  []*uint
-	Fullname *string
-	Username *string
-	Email    *string
-	Password *string
-}
-
-type FilterUserPayload struct {
-	IDs       []uint
-	Fullnames []string
-	Usernames []string
-	Emails    []string
-	Search    string
-	Page      int
-	PerPage   int
-}
-
 type userRepository struct {
 	db     bun.IDB
 	logger logger.Logger
 }
 
-func NewUserRepository(db bun.IDB, logger logger.Logger) UserRepository {
+func NewUserRepository(db bun.IDB, logger logger.Logger) *userRepository {
 	return &userRepository{db: db, logger: logger}
 }
 
@@ -65,6 +48,16 @@ func (r *userRepository) Create(ctx context.Context, req *entity.User) (*entity.
 	}
 
 	return user.ToDomain(), nil
+}
+
+type FilterUserPayload struct {
+	IDs       []uint
+	Fullnames []string
+	Usernames []string
+	Emails    []string
+	Search    string
+	Page      int
+	PerPage   int
 }
 
 func (r *userRepository) Find(ctx context.Context, filter *FilterUserPayload) ([]*entity.User, int, error) {
@@ -140,6 +133,15 @@ func (r *userRepository) FindByID(ctx context.Context, id uint) (*entity.User, e
 	}
 
 	return user.ToDomain(), nil
+}
+
+type UpdateUserPayload struct {
+	ID       uint
+	RoleIDs  []*uint
+	Fullname *string
+	Username *string
+	Email    *string
+	Password *string
 }
 
 func (r *userRepository) Update(ctx context.Context, req *UpdateUserPayload) (*entity.User, error) {

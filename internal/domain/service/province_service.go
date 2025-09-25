@@ -2,15 +2,18 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
-	repo "goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	repo "goapptemp/internal/adapter/repository"
+
+	serror "goapptemp/internal/domain/service/error"
 )
+
+var _ ProvinceService = (*provinceService)(nil)
 
 type ProvinceService interface {
 	Find(ctx context.Context, req *FindProvincesRequest) ([]*entity.Province, int, error)
@@ -24,7 +27,7 @@ type provinceService struct {
 	auth   AuthService
 }
 
-func NewProvinceService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) ProvinceService {
+func NewProvinceService(config *config.Config, repo repo.Repository, logger logger.Logger, auth AuthService) *provinceService {
 	return &provinceService{
 		config: config,
 		repo:   repo,
@@ -37,10 +40,6 @@ type FindProvincesRequest struct {
 	Filter *mysql.FilterProvincePayload
 }
 
-type FindOneProvinceRequest struct {
-	ProvinceID uint
-}
-
 func (s *provinceService) Find(ctx context.Context, req *FindProvincesRequest) ([]*entity.Province, int, error) {
 	provinces, totalCount, err := s.repo.MySQL().Province().Find(ctx, req.Filter)
 	if err != nil {
@@ -48,6 +47,10 @@ func (s *provinceService) Find(ctx context.Context, req *FindProvincesRequest) (
 	}
 
 	return provinces, totalCount, nil
+}
+
+type FindOneProvinceRequest struct {
+	ProvinceID uint
 }
 
 func (s *provinceService) FindOne(ctx context.Context, req *FindOneProvinceRequest) (*entity.Province, error) {

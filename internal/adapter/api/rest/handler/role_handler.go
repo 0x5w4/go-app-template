@@ -10,8 +10,8 @@ import (
 	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	validator "github.com/go-playground/validator/v10"
+	echo "github.com/labstack/echo/v4"
 )
 
 type RoleHandler struct {
@@ -25,38 +25,15 @@ func NewRoleHandler(properties properties) *RoleHandler {
 }
 
 type CreateRole struct {
-	PermissionIDs []uint  `json:"permission_ids" validate:"required,dive,required,gt=0"`
-	Code          string  `json:"code" validate:"required,min=2,max=50,code_chars_allowed"`
-	Name          string  `json:"name" validate:"required,min=2,max=100"`
+	PermissionIDs []uint  `json:"permission_ids"        validate:"required,dive,required,gt=0"`
+	Code          string  `json:"code"                  validate:"required,min=2,max=50,code_chars_allowed"`
+	Name          string  `json:"name"                  validate:"required,min=2,max=100"`
 	Description   *string `json:"description,omitempty" validate:"max=255"`
 	SuperAdmin    bool    `json:"super_admin"`
 }
 
 type CreateRoleRequest struct {
 	Role CreateRole `json:"role" validate:"required"`
-}
-
-type UpdateRole struct {
-	ID            uint    `param:"id" validate:"required,gt=0"`
-	PermissionIDs []*uint `json:"permission_ids,omitempty" validate:"dive,required,gt=0"`
-	Code          *string `json:"code,omitempty" validate:"min=2,max=50,code_chars_allowed"`
-	Name          *string `json:"name,omitempty" validate:"min=2,max=100"`
-	Description   *string `json:"description,omitempty" validate:"max=255"`
-	SuperAdmin    *bool   `json:"super_admin,omitempty"`
-}
-
-type UpdateRoleRequest struct {
-	Role UpdateRole `json:"role" validate:"required"`
-}
-
-type FilterRoleRequest struct {
-	IDs        []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Codes      []string `query:"codes" validate:"omitempty,dive,min=2,max=50,code_chars_allowed"`
-	Names      []string `query:"names" validate:"omitempty,dive,min=2,max=100"`
-	SuperAdmin *bool    `query:"super_admin" validate:"omitempty"`
-	Search     string   `query:"search" validate:"omitempty,min=1"`
-	Page       int      `query:"page" validate:"omitempty,min=1"`
-	PerPage    int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
 func (h *RoleHandler) CreateRole(c echo.Context) error {
@@ -101,6 +78,16 @@ func (h *RoleHandler) CreateRole(c echo.Context) error {
 	data := serializer.SerializeRole(role)
 
 	return response.Success(c, "Create role success", data)
+}
+
+type FilterRoleRequest struct {
+	IDs        []uint   `validate:"omitempty,dive,gt=0"                            query:"ids"`
+	Codes      []string `validate:"omitempty,dive,min=2,max=50,code_chars_allowed" query:"codes"`
+	Names      []string `validate:"omitempty,dive,min=2,max=100"                   query:"names"`
+	SuperAdmin *bool    `validate:"omitempty"                                      query:"super_admin"`
+	Search     string   `validate:"omitempty,min=1"                                query:"search"`
+	Page       int      `validate:"omitempty,min=1"                                query:"page"`
+	PerPage    int      `validate:"omitempty,min=1,max=100"                        query:"per_page"`
 }
 
 func (h *RoleHandler) FindRoles(c echo.Context) error {
@@ -194,6 +181,19 @@ func (h *RoleHandler) FindOneRole(c echo.Context) error {
 	data := serializer.SerializeRole(role)
 
 	return response.Success(c, "Find role success", data)
+}
+
+type UpdateRole struct {
+	ID            uint    `validate:"required,gt=0"        param:"id"`
+	PermissionIDs []*uint `json:"permission_ids,omitempty" validate:"dive,required,gt=0"`
+	Code          *string `json:"code,omitempty"           validate:"min=2,max=50,code_chars_allowed"`
+	Name          *string `json:"name,omitempty"           validate:"min=2,max=100"`
+	Description   *string `json:"description,omitempty"    validate:"max=255"`
+	SuperAdmin    *bool   `json:"super_admin,omitempty"`
+}
+
+type UpdateRoleRequest struct {
+	Role UpdateRole `json:"role" validate:"required"`
 }
 
 func (h *RoleHandler) UpdateRole(c echo.Context) error {

@@ -3,7 +3,7 @@ package response
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 type Response struct {

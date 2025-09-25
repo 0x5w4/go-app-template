@@ -10,8 +10,8 @@ import (
 	"goapptemp/internal/shared/exception"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	validator "github.com/go-playground/validator/v10"
+	echo "github.com/labstack/echo/v4"
 )
 
 type UserHandler struct {
@@ -28,34 +28,12 @@ type CreateUser struct {
 	RoleIDs  []uint `json:"role_ids" validate:"required,dive,required,gt=0"`
 	Fullname string `json:"fullname" validate:"required,min=3,max=100"`
 	Username string `json:"username" validate:"required,min=3,max=100,username_chars_allowed"`
-	Email    string `json:"email" validate:"required,email,min=3,max=100"`
+	Email    string `json:"email"    validate:"required,email,min=3,max=100"`
 	Password string `json:"password" validate:"required,password,max=200"`
 }
 
 type CreateUserRequest struct {
 	User CreateUser `json:"user" validate:"required"`
-}
-
-type UpdateUser struct {
-	ID       uint    `param:"id" validate:"required,gt=0"`
-	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
-	Email    *string `json:"email,omitempty" validate:"email,min=3,max=100"`
-	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
-	Password *string `json:"password,omitempty" validate:"password,max=200"`
-	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
-}
-
-type UpdateUserRequest struct {
-	User UpdateUser `json:"user" validate:"required"`
-}
-
-type FilterUserRequest struct {
-	IDs       []uint   `query:"ids" validate:"omitempty,dive,gt=0"`
-	Usernames []string `query:"usernames" validate:"omitemptymin=3,max=100,username_chars_allowed"`
-	Emails    []string `query:"emails" validate:"email,min=3,max=100"`
-	Search    string   `query:"search" validate:"omitempty,min=1"`
-	Page      int      `query:"page" validate:"omitempty,min=1"`
-	PerPage   int      `query:"per_page" validate:"omitempty,min=1,max=100"`
 }
 
 func (h *UserHandler) CreateUser(c echo.Context) error {
@@ -99,6 +77,15 @@ func (h *UserHandler) CreateUser(c echo.Context) error {
 	data := serializer.SerializeUser(user)
 
 	return response.Success(c, "Create user success", data)
+}
+
+type FilterUserRequest struct {
+	IDs       []uint   `validate:"omitempty,dive,gt=0"                           query:"ids"`
+	Usernames []string `validate:"omitemptymin=3,max=100,username_chars_allowed" query:"usernames"`
+	Emails    []string `validate:"email,min=3,max=100"                           query:"emails"`
+	Search    string   `validate:"omitempty,min=1"                               query:"search"`
+	Page      int      `validate:"omitempty,min=1"                               query:"page"`
+	PerPage   int      `validate:"omitempty,min=1,max=100"                       query:"per_page"`
 }
 
 func (h *UserHandler) FindUsers(c echo.Context) error {
@@ -191,6 +178,19 @@ func (h *UserHandler) FindOneUser(c echo.Context) error {
 	data := serializer.SerializeUser(user)
 
 	return response.Success(c, "Find user success", data)
+}
+
+type UpdateUser struct {
+	ID       uint    `validate:"required,gt=0"  param:"id"`
+	RoleIDs  []*uint `json:"role_ids,omitempty" validate:"dive,required,gt=0"`
+	Email    *string `json:"email,omitempty"    validate:"email,min=3,max=100"`
+	Username *string `json:"username,omitempty" validate:"min=3,max=100,username_chars_allowed"`
+	Password *string `json:"password,omitempty" validate:"password,max=200"`
+	Fullname *string `json:"fullname,omitempty" validate:"min=3,max=100"`
+}
+
+type UpdateUserRequest struct {
+	User UpdateUser `json:"user" validate:"required"`
 }
 
 func (h *UserHandler) UpdateUser(c echo.Context) error {

@@ -1,10 +1,9 @@
 package serializer
 
 import (
-	"time"
-
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/domain/service"
+	"time"
 )
 
 type SupportFeatureResponseData struct {

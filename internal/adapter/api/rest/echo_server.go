@@ -3,18 +3,17 @@ package rest
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
-
 	"goapptemp/config"
 	"goapptemp/internal/adapter/api/rest/handler"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
+	"net/http"
+	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/echo/v4"
+	echo "github.com/labstack/echo/v4"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -33,7 +32,7 @@ type echoServer struct {
 	handler handler.Handler
 }
 
-func NewEchoServer(config *config.Config, logger logger.Logger, token token.Token, service service.Service, repository repository.Repository) (Server, error) {
+func NewEchoServer(config *config.Config, logger logger.Logger, token token.Token, service service.Service, repository repository.Repository) (*echoServer, error) {
 	e := echo.New()
 	e.HideBanner = true
 

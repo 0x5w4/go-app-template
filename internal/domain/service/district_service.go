@@ -2,15 +2,18 @@ package service
 
 import (
 	"context"
-
 	"goapptemp/config"
-	repo "goapptemp/internal/adapter/repository"
 	"goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
-	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
+
+	repo "goapptemp/internal/adapter/repository"
+
+	serror "goapptemp/internal/domain/service/error"
 )
+
+var _ DistrictService = (*districtService)(nil)
 
 type DistrictService interface {
 	Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error)
@@ -24,7 +27,7 @@ type districtService struct {
 	auth   AuthService
 }
 
-func NewDistrictService(config *config.Config, repo repo.Repository, log logger.Logger, auth AuthService) DistrictService {
+func NewDistrictService(config *config.Config, repo repo.Repository, log logger.Logger, auth AuthService) *districtService {
 	return &districtService{
 		config: config,
 		repo:   repo,
@@ -37,10 +40,6 @@ type FindDistrictsRequest struct {
 	Filter *mysql.FilterDistrictPayload
 }
 
-type FindOneDistrictRequest struct {
-	DistrictID uint
-}
-
 func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error) {
 	districts, totalCount, err := s.repo.MySQL().District().Find(ctx, req.Filter)
 	if err != nil {
@@ -48,6 +47,10 @@ func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) (
 	}
 
 	return districts, totalCount, nil
+}
+
+type FindOneDistrictRequest struct {
+	DistrictID uint
 }
 
 func (s *districtService) FindOne(ctx context.Context, req *FindOneDistrictRequest) (*entity.District, error) {

@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
@@ -10,10 +9,25 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ DistrictRepository = (*districtRepository)(nil)
+
 type DistrictRepository interface {
 	GetTableName() string
 	FindByID(ctx context.Context, id uint) (*entity.District, error)
 	Find(ctx context.Context, filter *FilterDistrictPayload) ([]*entity.District, int, error)
+}
+
+type districtRepository struct {
+	db     bun.IDB
+	logger logger.Logger
+}
+
+func NewDistrictRepository(db bun.IDB, logger logger.Logger) *districtRepository {
+	return &districtRepository{db: db, logger: logger}
+}
+
+func (r *districtRepository) GetTableName() string {
+	return "districts"
 }
 
 type FilterDistrictPayload struct {
@@ -23,19 +37,6 @@ type FilterDistrictPayload struct {
 	Search  string
 	Page    int
 	PerPage int
-}
-
-type districtRepository struct {
-	db     bun.IDB
-	logger logger.Logger
-}
-
-func NewDistrictRepository(db bun.IDB, logger logger.Logger) DistrictRepository {
-	return &districtRepository{db: db, logger: logger}
-}
-
-func (r *districtRepository) GetTableName() string {
-	return "districts"
 }
 
 func (r *districtRepository) Find(ctx context.Context, filter *FilterDistrictPayload) ([]*entity.District, int, error) {

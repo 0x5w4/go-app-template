@@ -38,7 +38,6 @@ func IsValidUUID(id string) bool {
 	return err == nil
 }
 
-// generates a deterministic UUID v5 based on a namespace and name
 func GenerateUUIDv5(namespace uuid.UUID, name string) uuid.UUID {
-	return uuid.NewSHA1(namespace, []byte(name)) // Or use NewMD5 if needed
+	return uuid.NewSHA1(namespace, []byte(name))
 }

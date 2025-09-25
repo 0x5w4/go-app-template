@@ -3,13 +3,14 @@ package mysql
 import (
 	"context"
 	"database/sql"
-
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
 )
+
+var _ RoleRepository = (*roleRepository)(nil)
 
 type RoleRepository interface {
 	GetTableName() string
@@ -23,31 +24,12 @@ type RoleRepository interface {
 	SyncPermissions(ctx context.Context, roleID uint, permissionIDs []uint) ([]*entity.RolePermission, error)
 }
 
-type FilterRolePayload struct {
-	IDs        []uint
-	Codes      []string
-	Names      []string
-	SuperAdmin *bool
-	Search     string
-	Page       int
-	PerPage    int
-}
-
-type UpdateRolePayload struct {
-	ID            uint
-	PermissionIDs []*uint
-	Code          *string
-	Name          *string
-	Description   *string
-	SuperAdmin    *bool
-}
-
 type roleRepository struct {
 	db     bun.IDB
 	logger logger.Logger
 }
 
-func NewRoleRepository(db bun.IDB, logger logger.Logger) RoleRepository {
+func NewRoleRepository(db bun.IDB, logger logger.Logger) *roleRepository {
 	return &roleRepository{db: db, logger: logger}
 }
 
@@ -66,6 +48,16 @@ func (r *roleRepository) Create(ctx context.Context, req *entity.Role) (*entity.
 	}
 
 	return role.ToDomain(), nil
+}
+
+type FilterRolePayload struct {
+	IDs        []uint
+	Codes      []string
+	Names      []string
+	SuperAdmin *bool
+	Search     string
+	Page       int
+	PerPage    int
 }
 
 func (r *roleRepository) Find(ctx context.Context, filter *FilterRolePayload) ([]*entity.Role, int, error) {
@@ -140,6 +132,15 @@ func (r *roleRepository) FindByID(ctx context.Context, id uint) (*entity.Role, e
 	}
 
 	return role.ToDomain(), nil
+}
+
+type UpdateRolePayload struct {
+	ID            uint
+	PermissionIDs []*uint
+	Code          *string
+	Name          *string
+	Description   *string
+	SuperAdmin    *bool
 }
 
 func (r *roleRepository) Update(ctx context.Context, req *UpdateRolePayload) (*entity.Role, error) {

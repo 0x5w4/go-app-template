@@ -14,7 +14,7 @@ func Sanitize(data any, policy *bluemonday.Policy) {
 
 	val := reflect.ValueOf(data)
 
-	if val.Kind() != reflect.Ptr || val.IsNil() {
+	if val.Kind() != reflect.Pointer || val.IsNil() {
 		return
 	}
 
@@ -23,7 +23,7 @@ func Sanitize(data any, policy *bluemonday.Policy) {
 		return
 	}
 
-	for i := 0; i < elem.NumField(); i++ {
+	for i := range elem.NumField() {
 		field := elem.Field(i)
 
 		if !field.CanSet() {
@@ -38,13 +38,11 @@ func Sanitize(data any, policy *bluemonday.Policy) {
 			field.SetString(sanitized)
 
 		case reflect.Struct:
-
 			if field.Addr().CanInterface() {
 				Sanitize(field.Addr().Interface(), policy)
 			}
 
-		case reflect.Ptr:
-
+		case reflect.Pointer:
 			if !field.IsNil() && field.Elem().Kind() == reflect.Struct {
 				Sanitize(field.Interface(), policy)
 			}
