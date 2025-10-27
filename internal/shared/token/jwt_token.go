@@ -26,8 +26,8 @@ type jwtToken struct {
 }
 
 func NewJwtToken(accessSecretKey, refreshSecretKey string, accessTokenDuration, refreshTokenDuration time.Duration) (*jwtToken, error) {
-	if len(accessSecretKey) < constant.TOKEN_MIN_SECRET_SIZE || len(refreshSecretKey) < constant.TOKEN_MIN_SECRET_SIZE {
-		return nil, fmt.Errorf("invalid key size: must be at least %d characters", constant.TOKEN_MIN_SECRET_SIZE)
+	if len(accessSecretKey) < constant.TokenMinSecretSize || len(refreshSecretKey) < constant.TokenMinSecretSize {
+		return nil, fmt.Errorf("invalid key size: must be at least %d characters", constant.TokenMinSecretSize)
 	}
 
 	if accessTokenDuration <= 0 || refreshTokenDuration <= 0 {
@@ -65,7 +65,7 @@ func (j *jwtToken) GenerateAccessToken(userID uint) (string, time.Time, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    constant.TOKEN_ISSUER,
+			Issuer:    constant.TokenIssuer,
 			Subject:   strconv.FormatUint(uint64(userID), 10),
 			ID:        uuidStr,
 		},
@@ -94,7 +94,7 @@ func (j *jwtToken) GenerateRefreshToken(userID uint) (string, time.Time, error) 
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    constant.TOKEN_ISSUER,
+			Issuer:    constant.TokenIssuer,
 			Subject:   strconv.FormatUint(uint64(userID), 10),
 			ID:        uuidStr,
 		},

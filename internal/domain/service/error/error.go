@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/shared/exception"
 	"regexp"
 	"strings"
-
-	mysql "goapptemp/internal/adapter/repository/mysql"
 
 	"github.com/cockroachdb/errors"
 )
@@ -46,13 +45,13 @@ func TranslateRepoError(err error) error {
 		return ex
 	}
 
-	if errors.Is(err, mysql.ErrCodeConflict) {
-		detailedMsg := getDetailedRepoMessage(err, mysql.ErrCodeConflict)
+	if errors.Is(err, mysqlrepository.ErrCodeConflict) {
+		detailedMsg := getDetailedRepoMessage(err, mysqlrepository.ErrCodeConflict)
 		return exception.Wrap(err, exception.TypeConflict, exception.CodeConflict, detailedMsg)
 	}
 
-	if errors.Is(err, mysql.ErrDuplicateEntry) {
-		detailedMsg := getDetailedRepoMessage(err, mysql.ErrDuplicateEntry)
+	if errors.Is(err, mysqlrepository.ErrDuplicateEntry) {
+		detailedMsg := getDetailedRepoMessage(err, mysqlrepository.ErrDuplicateEntry)
 		err := exception.New(exception.TypeConflict, exception.CodeConflict, detailedMsg)
 		ex, ok := exception.GetException(err)
 
@@ -75,30 +74,30 @@ func TranslateRepoError(err error) error {
 		return ex
 	}
 
-	if errors.Is(err, mysql.ErrForeignKey) {
-		detailedMsg := getDetailedRepoMessage(err, mysql.ErrForeignKey)
+	if errors.Is(err, mysqlrepository.ErrForeignKey) {
+		detailedMsg := getDetailedRepoMessage(err, mysqlrepository.ErrForeignKey)
 		return exception.Wrap(err, exception.TypeValidationError, exception.CodeDBConstraintViolation, "Related data constraint violation: "+detailedMsg)
 	}
 
-	if errors.Is(err, mysql.ErrDataTooLong) {
-		detailedMsg := getDetailedRepoMessage(err, mysql.ErrDataTooLong)
+	if errors.Is(err, mysqlrepository.ErrDataTooLong) {
+		detailedMsg := getDetailedRepoMessage(err, mysqlrepository.ErrDataTooLong)
 		return exception.Wrap(err, exception.TypeValidationError, exception.CodeValidationFailed, detailedMsg)
 	}
 
-	if errors.Is(err, mysql.ErrNotNull) {
-		detailedMsg := getDetailedRepoMessage(err, mysql.ErrNotNull)
+	if errors.Is(err, mysqlrepository.ErrNotNull) {
+		detailedMsg := getDetailedRepoMessage(err, mysqlrepository.ErrNotNull)
 		return exception.Wrap(err, exception.TypeValidationError, exception.CodeValidationFailed, detailedMsg)
 	}
 
-	if errors.Is(err, mysql.ErrNotFound) {
+	if errors.Is(err, mysqlrepository.ErrNotFound) {
 		return exception.Wrap(err, exception.TypeNotFound, exception.CodeNotFound, "Data not found")
 	}
 
-	if errors.Is(err, mysql.ErrDataNull) {
+	if errors.Is(err, mysqlrepository.ErrDataNull) {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Input data cannot be null")
 	}
 
-	if errors.Is(err, mysql.ErrIDNull) {
+	if errors.Is(err, mysqlrepository.ErrIDNull) {
 		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "Identifier (ID) cannot be null")
 	}
 

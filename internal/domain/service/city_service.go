@@ -4,7 +4,7 @@ import (
 	"context"
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
@@ -36,7 +36,7 @@ func NewCityService(config *config.Config, repo repository.Repository, log logge
 }
 
 type FindCitiesRequest struct {
-	Filter *mysql.FilterCityPayload
+	Filter *mysqlrepository.FilterCityPayload
 }
 
 func (s *cityService) Find(ctx context.Context, req *FindCitiesRequest) ([]*entity.City, int, error) {

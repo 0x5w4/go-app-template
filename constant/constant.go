@@ -1,67 +1,6 @@
 package constant
 
-var PermissionCodes = map[string]string{
-	"CLIENT.CREATE":          "CLIENT.CREATE",
-	"CLIENT.READ":            "CLIENT.READ",
-	"CLIENT.UPDATE":          "CLIENT.UPDATE",
-	"CLIENT.DELETE":          "CLIENT.DELETE",
-	"COMPANY.CREATE":         "COMPANY.CREATE",
-	"COMPANY.READ":           "COMPANY.READ",
-	"COMPANY.UPDATE":         "COMPANY.UPDATE",
-	"COMPANY.DELETE":         "COMPANY.DELETE",
-	"GROUP.CREATE":           "GROUP.CREATE",
-	"GROUP.READ":             "GROUP.READ",
-	"GROUP.UPDATE":           "GROUP.UPDATE",
-	"GROUP.DELETE":           "GROUP.DELETE",
-	"MERCHANT.CREATE":        "MERCHANT.CREATE",
-	"MERCHANT.READ":          "MERCHANT.READ",
-	"MERCHANT.UPDATE":        "MERCHANT.UPDATE",
-	"MERCHANT.DELETE":        "MERCHANT.DELETE",
-	"PRINCIPLE.CREATE":       "PRINCIPLE.CREATE",
-	"PRINCIPLE.READ":         "PRINCIPLE.READ",
-	"PRINCIPLE.UPDATE":       "PRINCIPLE.UPDATE",
-	"PRINCIPLE.DELETE":       "PRINCIPLE.DELETE",
-	"ROLE.CREATE":            "ROLE.CREATE",
-	"ROLE.READ":              "ROLE.READ",
-	"ROLE.UPDATE":            "ROLE.UPDATE",
-	"ROLE.DELETE":            "ROLE.DELETE",
-	"BIN.CREATE":             "BIN.CREATE",
-	"BIN.READ":               "BIN.READ",
-	"BIN.UPDATE":             "BIN.UPDATE",
-	"BIN.DELETE":             "BIN.DELETE",
-	"STOCK.CREATE":           "STOCK.CREATE",
-	"STOCK.READ":             "STOCK.READ",
-	"STOCK.UPDATE":           "STOCK.UPDATE",
-	"STOCK.DELETE":           "STOCK.DELETE",
-	"PRODUCT.CREATE":         "PRODUCT.CREATE",
-	"PRODUCT.READ":           "PRODUCT.READ",
-	"PRODUCT.UPDATE":         "PRODUCT.UPDATE",
-	"PRODUCT.DELETE":         "PRODUCT.DELETE",
-	"USER.CREATE":            "USER.CREATE",
-	"USER.READ":              "USER.READ",
-	"USER.UPDATE":            "USER.UPDATE",
-	"USER.DELETE":            "USER.DELETE",
-	"ISSUER.CREATE":          "ISSUER.CREATE",
-	"ISSUER.READ":            "ISSUER.READ",
-	"ISSUER.UPDATE":          "ISSUER.UPDATE",
-	"ISSUER.DELETE":          "ISSUER.DELETE",
-	"MAIN_FEATURE.CREATE":    "MAIN_FEATURE.CREATE",
-	"MAIN_FEATURE.READ":      "MAIN_FEATURE.READ",
-	"MAIN_FEATURE.UPDATE":    "MAIN_FEATURE.UPDATE",
-	"MAIN_FEATURE.DELETE":    "MAIN_FEATURE.DELETE",
-	"SUPPORT_FEATURE.CREATE": "SUPPORT_FEATURE.CREATE",
-	"SUPPORT_FEATURE.READ":   "SUPPORT_FEATURE.READ",
-	"SUPPORT_FEATURE.UPDATE": "SUPPORT_FEATURE.UPDATE",
-	"SUPPORT_FEATURE.DELETE": "SUPPORT_FEATURE.DELETE",
-	"ACQUIRER.CREATE":        "ACQUIRER.CREATE",
-	"ACQUIRER.READ":          "ACQUIRER.READ",
-	"ACQUIRER.UPDATE":        "ACQUIRER.UPDATE",
-	"ACQUIRER.DELETE":        "ACQUIRER.DELETE",
-	"ENDPOINT.CREATE":        "ENDPOINT.CREATE",
-	"ENDPOINT.READ":          "ENDPOINT.READ",
-	"ENDPOINT.UPDATE":        "ENDPOINT.UPDATE",
-	"ENDPOINT.DELETE":        "ENDPOINT.DELETE",
-}
+import "time"
 
 var CodePefix = map[string]string{
 	"client":          "CL",
@@ -94,30 +33,47 @@ const (
 	EnvironmentProduction  string = "production"
 )
 
+type contextKey string
+
 const (
-	SubLoggerCtxKey   string = "sub_logger"
-	AuthPayloadCtxKey string = "auth_payload"
-	RequestIDCtxKey   string = "request_id"
-	TraceIDCtxKey     string = "trace_id"
+	CtxKeySubLogger       string     = "sub_logger"
+	CtxKeyAuthPayload     string     = "auth_payload"
+	CtxKeyRequestID       string     = "request_id"
+	CtxKeyTraceID         string     = "trace_id"
+	CtxKeyLoggerStartTime contextKey = "redis_logger_start_time"
+	CtxKeyRequestIP       contextKey = "request_ip"
 )
 
 const (
-	TOKEN_TYPE            string = "Bearer"
-	TOKEN_MIN_SECRET_SIZE int    = 32
-	TOKEN_ISSUER          string = "goapptemp-auth"
+	TokenType          string = "Bearer"
+	TokenMinSecretSize int    = 32
+	TokenIssuer        string = "goapptemp-auth"
 )
 
 const (
-	ImgMaxSize int = 10 * 1024 * 1024
-	FailedIcon     = "failed"
+	ImgMaxSize int    = 10 * 1024 * 1024
+	FailedIcon string = "failed"
 )
 
 const (
-	SoftDeleteColumnName = "deleted_at"
-	KeyColumnName        = "key"
-	ParentSchema         = "goapptemp"
+	SoftDeleteColumnName string = "deleted_at"
+	KeyColumnName        string = "key"
+	ParentSchema         string = "goapptemp"
 )
 
 const (
 	ClientModelType string = "client"
+)
+
+const (
+	IpRateLimitAttempts     int           = 50
+	IpRateLimitWindow       time.Duration = 10 * time.Minute
+	IpBackoffBaseSeconds    int           = 60
+	UserFailedAttemptsLimit int           = 10
+	UserFailedWindow        time.Duration = 15 * time.Minute
+	UserLockoutDuration     time.Duration = 30 * time.Minute
+)
+
+const (
+	DummyPasswordHash string = "$2a$12$7bJc1sFjQw2u3Yv9kqLq.eK1gY4Gx8h0q1zQj2Vl9cYQ1N0e8xF5e"
 )

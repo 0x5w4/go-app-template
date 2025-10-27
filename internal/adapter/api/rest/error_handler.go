@@ -13,7 +13,7 @@ import (
 )
 
 func (s *echoServer) httpErrorHandler(err error, c echo.Context) {
-	requestID, ok := c.Get(constant.RequestIDCtxKey).(string)
+	requestID, ok := c.Get(constant.CtxKeyRequestID).(string)
 	if !ok || requestID == "" {
 		s.logger.Warn().Msg("Request ID not found in context, using empty string")
 	}
@@ -24,7 +24,7 @@ func (s *echoServer) httpErrorHandler(err error, c echo.Context) {
 		apmErr.Send()
 	}
 
-	log, ok := c.Get(constant.SubLoggerCtxKey).(logger.Logger)
+	log, ok := c.Get(constant.CtxKeySubLogger).(logger.Logger)
 	if !ok || log == nil {
 		log = s.logger.NewInstance().Field("request_id", requestID).Logger()
 	}

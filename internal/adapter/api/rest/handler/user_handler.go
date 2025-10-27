@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
@@ -125,7 +125,7 @@ func (h *UserHandler) FindUsers(c echo.Context) error {
 	users, totalCount, err := h.service.User().Find(ctx,
 		&service.FindUserRequest{
 			AuthParams: &authArg,
-			UserFilter: &mysql.FilterUserPayload{
+			UserFilter: &mysqlrepository.FilterUserPayload{
 				IDs:       req.IDs,
 				Usernames: req.Usernames,
 				Emails:    req.Emails,
@@ -226,7 +226,7 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 	user, err := h.service.User().Update(ctx,
 		&service.UpdateUserRequest{
 			AuthParams: &authArg,
-			Update: &mysql.UpdateUserPayload{
+			Update: &mysqlrepository.UpdateUserPayload{
 				ID:       req.User.ID,
 				RoleIDs:  req.User.RoleIDs,
 				Fullname: req.User.Fullname,

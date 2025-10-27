@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
@@ -127,7 +127,7 @@ func (h *RoleHandler) FindRoles(c echo.Context) error {
 	roles, totalCount, err := h.service.Role().Find(ctx,
 		&service.FindRolesRequest{
 			AuthParams: &authArg,
-			Filter: &mysql.FilterRolePayload{
+			Filter: &mysqlrepository.FilterRolePayload{
 				IDs:        req.IDs,
 				Names:      req.Names,
 				Codes:      req.Codes,
@@ -229,7 +229,7 @@ func (h *RoleHandler) UpdateRole(c echo.Context) error {
 	role, err := h.service.Role().Update(ctx,
 		&service.UpdateRoleRequest{
 			AuthParams: &authArg,
-			Update: &mysql.UpdateRolePayload{
+			Update: &mysqlrepository.UpdateRolePayload{
 				ID:            req.Role.ID,
 				PermissionIDs: req.Role.PermissionIDs,
 				Name:          req.Role.Name,

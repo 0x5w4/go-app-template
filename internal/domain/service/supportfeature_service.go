@@ -7,7 +7,7 @@ import (
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
@@ -88,7 +88,7 @@ func (s *supportFeatureService) Create(ctx context.Context, req *CreateSupportFe
 
 	var supportFeature *entity.SupportFeature
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		for {
 			sfCode, err := shared.GenerateCode(constant.CodePefix["support_feature"], 5)
 			if err != nil {
@@ -151,7 +151,7 @@ func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateS
 
 	var supportFeaturesToReturn []*entity.SupportFeature
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		finalCodesForItems := make([]string, len(req.SupportFeatures))
 		assignedCodesSet := make(map[string]struct{})
 		initialPhaseCodes := make([]string, len(req.SupportFeatures))
@@ -260,7 +260,7 @@ func (s *supportFeatureService) BulkCreate(ctx context.Context, req *BulkCreateS
 
 type FindSupportFeaturesRequest struct {
 	AuthParams *AuthParams
-	Filter     *mysql.FilterSupportFeaturePayload
+	Filter     *mysqlrepository.FilterSupportFeaturePayload
 }
 
 func (s *supportFeatureService) Find(ctx context.Context, req *FindSupportFeaturesRequest) ([]*entity.SupportFeature, int, error) {
@@ -318,7 +318,7 @@ func (s *supportFeatureService) FindOne(ctx context.Context, req *FindOneSupport
 
 type UpdateSupportFeatureRequest struct {
 	AuthParams *AuthParams
-	Update     *mysql.UpdateSupportFeaturePayload
+	Update     *mysqlrepository.UpdateSupportFeaturePayload
 }
 
 func (s *supportFeatureService) Update(ctx context.Context, req *UpdateSupportFeatureRequest) (*entity.SupportFeature, error) {
@@ -374,7 +374,7 @@ func (s *supportFeatureService) Delete(ctx context.Context, req *DeleteSupportFe
 		return exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Help service ID cannot be zero")
 	}
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		sfTable := txRepo.SupportFeature().GetTableName()
 
 		dependencyMap, err := txRepo.StoreProcedure().CheckIfRecordsAreDeletable(ctx, sfTable, []uint{req.SupportFeatureID}, "")

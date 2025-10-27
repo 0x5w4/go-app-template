@@ -1,11 +1,11 @@
-package db
+package bundb
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"goapptemp/config"
-	"goapptemp/pkg/db/hook"
+	"goapptemp/pkg/bundb/hook"
 	"goapptemp/pkg/logger"
 	"math"
 	"time"
@@ -37,13 +37,14 @@ type bunDB struct {
 }
 
 func NewBunDB(config *config.Config, logger logger.Logger) (*bunDB, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
 	sqlDB, err := sql.Open("mysql", config.MySQL.DSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open mysql connection: %w", err)
 	}
+
+	// NOTE: This context only used by ping
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
 	if err := sqlDB.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)

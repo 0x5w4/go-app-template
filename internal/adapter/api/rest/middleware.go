@@ -1,11 +1,13 @@
 package rest
 
 import (
+	"context"
 	"goapptemp/constant"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,11 +21,12 @@ func (s *echoServer) setupMiddlewares() {
 	s.echo.Use(middleware.Recover())
 	s.echo.Use(middleware.RequestID())
 	s.echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // TODO: Restrict in production
+		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 	s.echo.Use(s.requestLoggerMiddleware())
+	s.echo.Use(s.rateLimitMiddleware())
 	s.echo.Use(apmecho.Middleware())
 	s.echo.HTTPErrorHandler = s.httpErrorHandler
 }
@@ -34,10 +37,10 @@ func (s *echoServer) requestLoggerMiddleware() echo.MiddlewareFunc {
 			startTime := time.Now()
 
 			reqID := c.Response().Header().Get(echo.HeaderXRequestID)
-			c.Set(constant.RequestIDCtxKey, reqID)
+			c.Set(constant.CtxKeyRequestID, reqID)
 
 			reqLogger := s.logger.NewInstance().Field("request_id", reqID).Logger()
-			c.Set(constant.SubLoggerCtxKey, reqLogger)
+			c.Set(constant.CtxKeySubLogger, reqLogger)
 
 			req := c.Request()
 			err := next(c)
@@ -105,8 +108,8 @@ func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 
 			tokenType, accessToken := parts[0], parts[1]
 
-			if strings.EqualFold(tokenType, constant.TOKEN_TYPE) {
-				return errors.Wrapf(ErrAuthUnsupported, "scheme %q is not %s", tokenType, constant.TOKEN_TYPE)
+			if strings.EqualFold(tokenType, constant.TokenType) {
+				return errors.Wrapf(ErrAuthUnsupported, "scheme %q is not %s", tokenType, constant.TokenType)
 			}
 
 			claims, verifyErr := s.token.VerifyAccessToken(accessToken)
@@ -118,7 +121,30 @@ func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 				AccessToken:       accessToken,
 				AccessTokenClaims: claims,
 			}
-			c.Set(constant.AuthPayloadCtxKey, authParam)
+			c.Set(constant.CtxKeyAuthPayload, authParam)
+
+			return next(c)
+		}
+	}
+}
+
+func (s *echoServer) rateLimitMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+			ip := c.RealIP()
+
+			ttl, err := s.redis.GetBlockIPTTL(ctx, ip)
+			if err == nil && ttl > 0 {
+				retryAfterSeconds := int(ttl.Seconds())
+				c.Response().Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
+				return c.JSON(http.StatusTooManyRequests, map[string]string{
+					"message": "Too Many Requests",
+				})
+			}
+
+			newCtx := context.WithValue(ctx, constant.CtxKeyRequestIP, ip)
+			c.SetRequest(c.Request().WithContext(newCtx))
 
 			return next(c)
 		}

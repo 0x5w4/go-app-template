@@ -10,9 +10,9 @@ import (
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/token"
-	"goapptemp/pkg/db"
+	"goapptemp/pkg/apmtracer"
+	"goapptemp/pkg/bundb"
 	"goapptemp/pkg/logger"
-	"goapptemp/pkg/tracer"
 	"os"
 	"os/signal"
 	"sync"
@@ -26,7 +26,7 @@ type App struct {
 	config     *config.Config
 	restServer rest.Server
 	logger     logger.Logger
-	tracer     tracer.Tracer
+	tracer     apmtracer.Tracer
 	pubsub     pubsubClient.Pubsub
 }
 
@@ -55,7 +55,7 @@ func (a *App) Run() error {
 	)
 
 	// Initialize tracer
-	a.tracer, err = tracer.NewApmTracer(&tracer.Config{
+	a.tracer, err = apmtracer.NewApmTracer(&apmtracer.Config{
 		ServiceName:    a.config.Tracer.ServiceName,
 		ServiceVersion: a.config.Tracer.ServiceVersion,
 		ServerURL:      a.config.Tracer.ServerURL,
@@ -160,7 +160,7 @@ func (a *App) Run() error {
 }
 
 func (a *App) Migrate(reset bool) error {
-	db, err := db.NewBunDB(a.config, a.logger)
+	db, err := bundb.NewBunDB(a.config, a.logger)
 	if err != nil {
 		return err
 	}

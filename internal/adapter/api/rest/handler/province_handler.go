@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
@@ -61,7 +61,7 @@ func (h *ProvinceHandler) FindProvinces(c echo.Context) error {
 	}
 
 	provinces, totalCount, err := h.service.Province().Find(ctx, &service.FindProvincesRequest{
-		Filter: &mysql.FilterProvincePayload{
+		Filter: &mysqlrepository.FilterProvincePayload{
 			IDs:     req.IDs,
 			Names:   req.Names,
 			Search:  req.Search,

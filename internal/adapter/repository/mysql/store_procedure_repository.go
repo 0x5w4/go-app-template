@@ -1,4 +1,4 @@
-package mysql
+package mysqlrepository
 
 import (
 	"context"

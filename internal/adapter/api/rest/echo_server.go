@@ -6,6 +6,7 @@ import (
 	"goapptemp/config"
 	"goapptemp/internal/adapter/api/rest/handler"
 	"goapptemp/internal/adapter/repository"
+	redisrepository "goapptemp/internal/adapter/repository/redis"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
@@ -30,6 +31,7 @@ type echoServer struct {
 	echo    *echo.Echo
 	token   token.Token
 	handler handler.Handler
+	redis   redisrepository.RedisRepository
 }
 
 func NewEchoServer(config *config.Config, logger logger.Logger, token token.Token, service service.Service, repository repository.Repository) (*echoServer, error) {
@@ -47,6 +49,7 @@ func NewEchoServer(config *config.Config, logger logger.Logger, token token.Toke
 		echo:    e,
 		token:   token,
 		handler: handler,
+		redis:   repository.Redis(),
 	}
 
 	server.setupMiddlewares()

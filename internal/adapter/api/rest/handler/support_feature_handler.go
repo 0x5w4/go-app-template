@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
@@ -188,7 +188,7 @@ func (h *SupportFeatureHandler) FindSupportFeatures(c echo.Context) error {
 	supportFeatures, totalCount, err := h.service.SupportFeature().Find(ctx,
 		&service.FindSupportFeaturesRequest{
 			AuthParams: &authArg,
-			Filter: &mysql.FilterSupportFeaturePayload{
+			Filter: &mysqlrepository.FilterSupportFeaturePayload{
 				IDs:      req.IDs,
 				Codes:    req.Codes,
 				Names:    req.Names,
@@ -289,7 +289,7 @@ func (h *SupportFeatureHandler) UpdateSupportFeature(c echo.Context) error {
 	supportFeature, err := h.service.SupportFeature().Update(ctx,
 		&service.UpdateSupportFeatureRequest{
 			AuthParams: &authArg,
-			Update: &mysql.UpdateSupportFeaturePayload{
+			Update: &mysqlrepository.UpdateSupportFeaturePayload{
 				ID:       req.SupportFeature.ID,
 				Name:     req.SupportFeature.Name,
 				Key:      req.SupportFeature.Key,

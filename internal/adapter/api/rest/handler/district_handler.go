@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
@@ -62,7 +62,7 @@ func (h *DistrictHandler) FindDistricts(c echo.Context) error {
 	}
 
 	districts, totalCount, err := h.service.District().Find(ctx, &service.FindDistrictsRequest{
-		Filter: &mysql.FilterDistrictPayload{
+		Filter: &mysqlrepository.FilterDistrictPayload{
 			IDs:     req.IDs,
 			CityIDs: req.CityIDs,
 			Names:   req.Names,

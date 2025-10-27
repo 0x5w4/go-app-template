@@ -1,11 +1,11 @@
-package mysql
+package mysqlrepository
 
 import (
 	"context"
 	"database/sql"
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository/mysql/model"
-	"goapptemp/pkg/db"
+	"goapptemp/pkg/bundb"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -49,7 +49,7 @@ type mysqlRepository struct {
 }
 
 func NewMySQLRepository(config *config.Config, logger logger.Logger) (*mysqlRepository, error) {
-	db, err := db.NewBunDB(config, logger)
+	db, err := bundb.NewBunDB(config, logger)
 	if err != nil {
 		return nil, err
 	}

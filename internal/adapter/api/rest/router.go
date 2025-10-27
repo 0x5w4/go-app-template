@@ -18,7 +18,7 @@ func (s *echoServer) setupRouter() {
 	{
 		authGroup := apiV1.Group("/auth")
 		{
-			authGroup.POST("/login", s.handler.Auth().Login)
+			authGroup.POST("/login", s.handler.Auth().Login, s.rateLimitMiddleware())
 		}
 
 		webhookGroup := apiV1.Group("/webhook")

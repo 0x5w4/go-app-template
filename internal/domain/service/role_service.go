@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"goapptemp/config"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
@@ -64,7 +64,7 @@ func (s *roleService) Create(ctx context.Context, req *CreateRoleRequest) (*enti
 
 	var role *entity.Role
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		var err error
 
 		role, err = txRepo.Role().Create(ctx, req.Role)
@@ -95,7 +95,7 @@ func (s *roleService) Create(ctx context.Context, req *CreateRoleRequest) (*enti
 
 type UpdateRoleRequest struct {
 	AuthParams *AuthParams
-	Update     *mysql.UpdateRolePayload
+	Update     *mysqlrepository.UpdateRolePayload
 }
 
 func (s *roleService) Update(ctx context.Context, req *UpdateRoleRequest) (*entity.Role, error) {
@@ -122,7 +122,7 @@ func (s *roleService) Update(ctx context.Context, req *UpdateRoleRequest) (*enti
 
 	var role *entity.Role
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		var err error
 
 		role, err = txRepo.Role().Update(ctx, req.Update)
@@ -197,7 +197,7 @@ func (s *roleService) Delete(ctx context.Context, req *DeleteRoleRequest) error 
 
 type FindRolesRequest struct {
 	AuthParams *AuthParams
-	Filter     *mysql.FilterRolePayload
+	Filter     *mysqlrepository.FilterRolePayload
 }
 
 func (s *roleService) Find(ctx context.Context, req *FindRolesRequest) ([]*entity.Role, int, error) {

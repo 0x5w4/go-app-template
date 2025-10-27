@@ -4,7 +4,7 @@ import (
 	"context"
 	"goapptemp/config"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
@@ -68,7 +68,7 @@ func (s *userService) Create(ctx context.Context, req *CreateUserRequest) (*enti
 
 	var user *entity.User
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		var err error
 
 		user, err = txRepo.User().Create(ctx, req.User)
@@ -99,7 +99,7 @@ func (s *userService) Create(ctx context.Context, req *CreateUserRequest) (*enti
 
 type UpdateUserRequest struct {
 	AuthParams *AuthParams
-	Update     *mysql.UpdateUserPayload
+	Update     *mysqlrepository.UpdateUserPayload
 }
 
 func (s *userService) Update(ctx context.Context, req *UpdateUserRequest) (*entity.User, error) {
@@ -137,7 +137,7 @@ func (s *userService) Update(ctx context.Context, req *UpdateUserRequest) (*enti
 
 	var user *entity.User
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		var err error
 
 		user, err = txRepo.User().Update(ctx, req.Update)
@@ -215,7 +215,7 @@ func (s *userService) Delete(ctx context.Context, req *DeleteUserRequest) error 
 
 type FindUserRequest struct {
 	AuthParams *AuthParams
-	UserFilter *mysql.FilterUserPayload
+	UserFilter *mysqlrepository.FilterUserPayload
 }
 
 func (s *userService) Find(ctx context.Context, req *FindUserRequest) ([]*entity.User, int, error) {

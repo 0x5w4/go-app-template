@@ -4,7 +4,7 @@ import (
 	"context"
 	"goapptemp/config"
 	"goapptemp/constant"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/pkg/logger"
 	"strings"
 
@@ -50,7 +50,7 @@ func (s *webhookService) UpdateIcon(ctx context.Context, req *UpdateIconRequest)
 			return nil
 		}
 
-		_, err = s.repo.MySQL().Client().Update(ctx, &mysql.UpdateClientPayload{
+		_, err = s.repo.MySQL().Client().Update(ctx, &mysqlrepository.UpdateClientPayload{
 			ID:   req.ID,
 			Icon: &req.Link,
 		})

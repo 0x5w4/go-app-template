@@ -30,7 +30,7 @@ func parseUintParam(c echo.Context, paramName string) (uint, error) {
 }
 
 func getAuthArg(c echo.Context) (service.AuthParams, error) {
-	arg := c.Get(constant.AuthPayloadCtxKey)
+	arg := c.Get(constant.CtxKeyAuthPayload)
 	if arg == nil {
 		return service.AuthParams{}, exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderMissing, "no authorization arguments provided")
 	}

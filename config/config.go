@@ -16,6 +16,7 @@ type Config struct {
 	Pubsub    *PubsubConfig
 	Drive     *DriveConfig
 	StaleTask *StaleTaskConfig
+	Redis     *RedisConfig
 }
 
 type AppConfig struct {
@@ -44,6 +45,13 @@ type DatabaseConfig struct {
 	ConnMaxLifetime    int
 	SlowQueryThreshold int
 	Debug              bool
+}
+
+type RedisConfig struct {
+	Host     string
+	Port     string
+	Password string
+	DB       int
 }
 
 type HTTPConfig struct {
@@ -124,6 +132,12 @@ func LoadConfig(envPath string) (*Config, error) {
 			ConnMaxLifetime:    viper.GetInt("MYSQL_CONN_MAX_LIFETIME"),
 			SlowQueryThreshold: viper.GetInt("MYSQL_SLOW_QUERY_THRESHOLD"),
 			Debug:              viper.GetBool("MYSQL_DEBUG"),
+		},
+		Redis: &RedisConfig{
+			Host:     viper.GetString("REDIS_HOST"),
+			Port:     viper.GetString("REDIS_PORT"),
+			Password: viper.GetString("REDIS_PASSWORD"),
+			DB:       viper.GetInt("REDIS_DB"),
 		},
 		Token: &TokenConfig{
 			AccessSecretKey:      viper.GetString("ACCESS_TOKEN_SECRET_KEY"),

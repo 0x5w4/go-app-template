@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
@@ -48,19 +49,68 @@ type LoginRequest struct {
 }
 
 func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.User, error) {
-	users, _, err := s.repository.MySQL().User().Find(ctx, &mysql.FilterUserPayload{Usernames: []string{req.Username}})
+
+	var (
+		user                  *entity.User
+		passwordHashToCompare string
+		loginSuccessful       bool = false
+	)
+
+	ip, _ := ctx.Value(constant.CtxKeyRequestIP).(string)
+
+	errGenericLogin := exception.New(exception.TypeBadRequest, exception.CodeUserInvalidLogin, "Invalid username or password")
+
+	isLocked, err := s.repository.Redis().CheckLockedUserExists(ctx, req.Username)
 	if err != nil {
 		return nil, serror.TranslateRepoError(err)
 	}
 
-	if len(users) == 0 {
-		return nil, exception.New(exception.TypeBadRequest, exception.CodeUserInvalidLogin, "Invalid username or password")
+	users, _, err := s.repository.MySQL().User().Find(ctx, &mysqlrepository.FilterUserPayload{Usernames: []string{req.Username}})
+	if err != nil {
+		return nil, serror.TranslateRepoError(err)
 	}
 
-	user := users[0]
-	if err := shared.CheckPassword(req.Password, user.Password); err != nil {
-		return nil, exception.New(exception.TypeBadRequest, exception.CodeUserInvalidLogin, "Invalid username or password")
+	if len(users) == 0 || users[0] == nil || isLocked {
+
+		passwordHashToCompare = constant.DummyPasswordHash
+		user = nil
+	} else {
+
+		user = users[0]
+		passwordHashToCompare = user.Password
 	}
+
+	errPass := shared.CheckPassword(req.Password, passwordHashToCompare)
+	if errPass == nil {
+
+		if user != nil && !isLocked {
+
+			loginSuccessful = true
+		}
+	}
+
+	if !loginSuccessful {
+		go func() {
+			bgCtx := context.Background()
+			errUser := s.repository.Redis().RecordUserFailure(bgCtx, req.Username)
+			if errUser != nil {
+
+				s.logger.Error().Msgf("Failed to record user failure: %v", errUser)
+			}
+			_, _, errIP := s.repository.Redis().RecordIPFailure(bgCtx, ip)
+			if errIP != nil {
+				s.logger.Error().Msgf(fmt.Sprintf("Failed to record IP failure: %v", errIP))
+			}
+		}()
+		return nil, errGenericLogin
+	}
+
+	go func() {
+		bgCtx := context.Background()
+		_ = s.repository.Redis().DeleteUserAttempt(bgCtx, req.Username)
+		_ = s.repository.Redis().DeleteIPAttempt(bgCtx, ip)
+		_ = s.repository.Redis().DeleteBlockCount(bgCtx, ip)
+	}()
 
 	accessToken, accessExpiresAt, err := s.token.GenerateAccessToken(user.ID)
 	if err != nil {
@@ -77,7 +127,7 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 		AccessTokenExpiresAt:  accessExpiresAt,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshExpiresAt,
-		TokenType:             constant.TOKEN_TYPE,
+		TokenType:             constant.TokenType,
 	}
 
 	return user, nil
@@ -142,6 +192,6 @@ func (s *authService) Refresh(ctx context.Context, req *RefreshRequest) (*entity
 		AccessTokenExpiresAt:  accessExpiresAt,
 		RefreshToken:          refreshToken,
 		RefreshTokenExpiresAt: refreshExpiresAt,
-		TokenType:             constant.TOKEN_TYPE,
+		TokenType:             constant.TokenType,
 	}, nil
 }

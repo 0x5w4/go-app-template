@@ -5,7 +5,7 @@ import (
 	"goapptemp/config"
 	"goapptemp/constant"
 	"goapptemp/internal/adapter/repository"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	serror "goapptemp/internal/domain/service/error"
 	"goapptemp/internal/shared"
@@ -91,7 +91,7 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 		}
 	}
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		for {
 			clientCode, err := shared.GenerateCode(constant.CodePefix["client"], 6)
 			if err != nil {
@@ -149,7 +149,7 @@ func (s *clientService) Create(ctx context.Context, req *CreateClientRequest) (*
 
 type FindClientsRequest struct {
 	AuthParams *AuthParams
-	Filter     *mysql.FilterClientPayload
+	Filter     *mysqlrepository.FilterClientPayload
 }
 
 func (s *clientService) Find(ctx context.Context, req *FindClientsRequest) ([]*entity.Client, int, error) {
@@ -207,7 +207,7 @@ func (s *clientService) FindOne(ctx context.Context, req *FindOneClientRequest) 
 
 type UpdateClientRequest struct {
 	AuthParams *AuthParams
-	Update     *mysql.UpdateClientPayload
+	Update     *mysqlrepository.UpdateClientPayload
 }
 
 func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*entity.Client, error) {
@@ -265,7 +265,7 @@ func (s *clientService) Update(ctx context.Context, req *UpdateClientRequest) (*
 		}
 	}
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		updatedClient, err = txRepo.Client().Update(ctx, req.Update)
 		if err != nil {
 			return err
@@ -326,7 +326,7 @@ func (s *clientService) Delete(ctx context.Context, req *DeleteClientRequest) er
 		return exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "Client ID cannot be zero")
 	}
 
-	atomicOperation := func(txRepo mysql.MySQLRepository) error {
+	atomicOperation := func(txRepo mysqlrepository.MySQLRepository) error {
 		clientTable := txRepo.Client().GetTableName()
 		ignoreTables := txRepo.ClientSupportFeature().GetTableName()
 

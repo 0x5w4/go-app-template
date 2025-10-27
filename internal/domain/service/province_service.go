@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"goapptemp/config"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
@@ -37,7 +37,7 @@ func NewProvinceService(config *config.Config, repo repo.Repository, logger logg
 }
 
 type FindProvincesRequest struct {
-	Filter *mysql.FilterProvincePayload
+	Filter *mysqlrepository.FilterProvincePayload
 }
 
 func (s *provinceService) Find(ctx context.Context, req *FindProvincesRequest) ([]*entity.Province, int, error) {

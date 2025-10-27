@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"goapptemp/config"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/entity"
 	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
@@ -37,7 +37,7 @@ func NewDistrictService(config *config.Config, repo repo.Repository, log logger.
 }
 
 type FindDistrictsRequest struct {
-	Filter *mysql.FilterDistrictPayload
+	Filter *mysqlrepository.FilterDistrictPayload
 }
 
 func (s *districtService) Find(ctx context.Context, req *FindDistrictsRequest) ([]*entity.District, int, error) {

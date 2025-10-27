@@ -3,7 +3,7 @@ package handler
 import (
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
-	"goapptemp/internal/adapter/repository/mysql"
+	mysqlrepository "goapptemp/internal/adapter/repository/mysql"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
@@ -62,7 +62,7 @@ func (h *CityHandler) FindCities(c echo.Context) error {
 	}
 
 	cities, totalCount, err := h.service.City().Find(ctx, &service.FindCitiesRequest{
-		Filter: &mysql.FilterCityPayload{
+		Filter: &mysqlrepository.FilterCityPayload{
 			IDs:         req.IDs,
 			ProvinceIDs: req.ProvinceIDs,
 			Names:       req.Names,

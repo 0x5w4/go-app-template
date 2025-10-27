@@ -68,7 +68,7 @@ func (h *LoggerHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
 	}
 
 	var subLogger logger.Logger
-	if l, ok := ctx.Value(constant.SubLoggerCtxKey).(logger.Logger); ok {
+	if l, ok := ctx.Value(constant.CtxKeySubLogger).(logger.Logger); ok {
 		subLogger = l
 	} else {
 		subLogger = h.logger
