@@ -26,7 +26,6 @@ func (s *echoServer) setupMiddlewares() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 	s.echo.Use(s.requestLoggerMiddleware())
-	s.echo.Use(s.rateLimitMiddleware())
 	s.echo.Use(apmecho.Middleware())
 	s.echo.HTTPErrorHandler = s.httpErrorHandler
 }
