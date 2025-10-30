@@ -13,6 +13,7 @@ import (
 	"goapptemp/internal/shared/exception"
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
+	"time"
 )
 
 var _ AuthService = (*authService)(nil)
@@ -20,6 +21,7 @@ var _ AuthService = (*authService)(nil)
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (*entity.User, error)
 	Refresh(ctx context.Context, req *RefreshRequest) (*entity.Token, error)
+	Logout(ctx context.Context, req *LogoutRequest) error
 	AuthorizationCheck(ctx context.Context, userID uint, permissionCode string) (bool, error)
 }
 
@@ -105,8 +107,8 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 
 	go func() {
 		bgCtx := context.Background()
-		_ = s.repository.Redis().DeleteUserAttempt(bgCtx, req.Username)
-		_ = s.repository.Redis().DeleteIPAttempt(bgCtx, ip)
+		_ = s.repository.Redis().DeleteUserAttempts(bgCtx, req.Username)
+		_ = s.repository.Redis().DeleteIPAttempts(bgCtx, ip)
 		_ = s.repository.Redis().DeleteBlockCount(bgCtx, ip)
 	}()
 
@@ -129,35 +131,6 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 	}
 
 	return user, nil
-}
-
-func (s *authService) AuthorizationCheck(ctx context.Context, userID uint, permissionCode string) (bool, error) {
-	if userID == 0 {
-		return false, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "User id not provided")
-	}
-
-	user, err := s.repository.MySQL().User().FindByID(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-
-	if user == nil {
-		return false, exception.New(exception.TypeNotFound, exception.CodeNotFound, "User not found")
-	}
-
-	for _, role := range user.Roles {
-		if role.SuperAdmin {
-			return true, nil
-		}
-
-		for _, permission := range role.Permissions {
-			if permission.Code == permissionCode {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
 }
 
 type RefreshRequest struct {
@@ -192,4 +165,67 @@ func (s *authService) Refresh(ctx context.Context, req *RefreshRequest) (*entity
 		RefreshTokenExpiresAt: refreshExpiresAt,
 		TokenType:             constant.TokenType,
 	}, nil
+}
+
+type LogoutRequest struct {
+	AccessTokenClaims *token.AccessTokenClaims
+	RefreshToken      string
+}
+
+func (s *authService) Logout(ctx context.Context, req *LogoutRequest) error {
+	atExpiresAt := req.AccessTokenClaims.ExpiresAt.Time
+	atTTL := time.Until(atExpiresAt)
+
+	if atTTL > 0 {
+		if req.AccessTokenClaims.ID == "" {
+			s.logger.Error().Msg("Access token has no JTI (ID), cannot blacklist")
+		} else {
+			err := s.repository.Redis().BlacklistToken(ctx, req.AccessTokenClaims.ID, atTTL)
+			if err != nil {
+				s.logger.Error().Msgf("Failed to blacklist access token: %v", err)
+			}
+		}
+	}
+
+	rtClaims, err := s.token.VerifyRefreshToken(req.RefreshToken)
+	if err != nil {
+		s.logger.Warn().Msgf("Invalid refresh token provided during logout: %v", err)
+		return nil
+	}
+
+	if rtClaims.UserID != req.AccessTokenClaims.UserID {
+		s.logger.Warn().Msgf("Logout attempt with mismatched tokens. UserID %d vs %d",
+			req.AccessTokenClaims.UserID, rtClaims.UserID)
+
+		return exception.New(exception.TypeBadRequest, exception.CodeBadRequest, "token mismatch")
+	}
+
+	rtExpiresAt := rtClaims.ExpiresAt.Time
+	rtTTL := time.Until(rtExpiresAt)
+
+	if rtTTL > 0 {
+		if rtClaims.ID == "" {
+			s.logger.Error().Msg("Refresh token has no JTI (ID), cannot blacklist")
+		} else {
+			err := s.repository.Redis().BlacklistToken(ctx, rtClaims.ID, rtTTL)
+			if err != nil {
+				s.logger.Error().Msgf("Failed to blacklist refresh token: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *authService) AuthorizationCheck(ctx context.Context, userID uint, permissionCode string) (bool, error) {
+	if userID == 0 {
+		return false, exception.New(exception.TypePermissionDenied, exception.CodeForbidden, "User id not provided")
+	}
+
+	hasPermission, err := s.repository.MySQL().User().HasPermission(ctx, userID, permissionCode)
+	if err != nil {
+		return false, serror.TranslateRepoError(err)
+	}
+
+	return hasPermission, nil
 }

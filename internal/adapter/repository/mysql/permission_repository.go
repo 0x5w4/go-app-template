@@ -4,6 +4,7 @@ import (
 	"context"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -35,7 +36,7 @@ func (r *permissionRepository) GetTableName() string {
 
 func (r *permissionRepository) Create(ctx context.Context, req *entity.Permission) (*entity.Permission, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create permission")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create permission")
 	}
 
 	permission := model.AsPermission(req)
@@ -48,7 +49,7 @@ func (r *permissionRepository) Create(ctx context.Context, req *entity.Permissio
 
 func (r *permissionRepository) FindByID(ctx context.Context, id uint) (*entity.Permission, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find permission by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find permission by id")
 	}
 
 	permission := &model.Permission{Base: model.Base{ID: id}}
@@ -134,7 +135,7 @@ type UpdatePermissionPayload struct {
 
 func (r *permissionRepository) Update(ctx context.Context, req *UpdatePermissionPayload) (*entity.Permission, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update permission")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update permission")
 	}
 
 	permission := &model.Permission{Base: model.Base{ID: req.ID}}
@@ -167,7 +168,7 @@ func (r *permissionRepository) Update(ctx context.Context, req *UpdatePermission
 
 func (r *permissionRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete permission")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete permission")
 	}
 
 	permission := &model.Permission{Base: model.Base{ID: id}}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 	"time"
 
@@ -36,7 +37,7 @@ func (r *companyRepository) GetTableName() string {
 
 func (r *companyRepository) Create(ctx context.Context, req *entity.Company) (*entity.Company, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create company")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create company")
 	}
 
 	company := model.AsCompany(req)
@@ -109,7 +110,7 @@ func (r *companyRepository) Find(ctx context.Context, filter *FilterCompanyPaylo
 
 func (r *companyRepository) FindByID(ctx context.Context, id uint) (*entity.Company, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find company by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find company by id")
 	}
 
 	company := &model.Company{Base: model.Base{ID: id}}
@@ -130,7 +131,7 @@ type UpdateCompanyPayload struct {
 
 func (r *companyRepository) Update(ctx context.Context, req *UpdateCompanyPayload) (*entity.Company, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update company")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update company")
 	}
 
 	company := &model.Company{Base: model.Base{ID: req.ID}}
@@ -175,7 +176,7 @@ func (r *companyRepository) Update(ctx context.Context, req *UpdateCompanyPayloa
 
 func (r *companyRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete company")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete company")
 	}
 
 	company := &model.Company{Base: model.Base{ID: id}}

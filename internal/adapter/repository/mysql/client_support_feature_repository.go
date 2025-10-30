@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
@@ -34,7 +35,7 @@ func (r *clientSupportFeatureRepository) GetTableName() string {
 
 func (r *clientSupportFeatureRepository) BulkCreate(ctx context.Context, req []*entity.ClientSupportFeature) ([]*entity.ClientSupportFeature, error) {
 	if len(req) == 0 {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create client support feature")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create client support feature")
 	}
 
 	clisfs := model.AsClientSupportFeatures(req)
@@ -47,7 +48,7 @@ func (r *clientSupportFeatureRepository) BulkCreate(ctx context.Context, req []*
 
 func (r *clientSupportFeatureRepository) DeleteByClientID(ctx context.Context, clientID uint) error {
 	if clientID == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete client support feature")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete client support feature")
 	}
 
 	_, err := r.db.NewDelete().Model((*model.ClientSupportFeature)(nil)).Where("client_id = ?", clientID).Exec(ctx)

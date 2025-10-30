@@ -4,6 +4,7 @@ import (
 	"context"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -90,7 +91,7 @@ func (r *provinceRepository) Find(ctx context.Context, filter *FilterProvincePay
 
 func (r *provinceRepository) FindByID(ctx context.Context, id uint) (*entity.Province, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find province by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find province by id")
 	}
 
 	province := &model.Province{ID: id}

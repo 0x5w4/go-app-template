@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 	"time"
 
@@ -39,7 +40,7 @@ func (r *clientRepository) GetTableName() string {
 
 func (r *clientRepository) Create(ctx context.Context, req *entity.Client) (*entity.Client, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create client")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create client")
 	}
 
 	client := model.AsClient(req)
@@ -118,7 +119,7 @@ func (r *clientRepository) Find(ctx context.Context, filter *FilterClientPayload
 
 func (r *clientRepository) FindByID(ctx context.Context, id uint, isWithRelation bool) (*entity.Client, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find client by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find client by id")
 	}
 
 	client := &model.Client{Base: model.Base{ID: id}}
@@ -158,7 +159,7 @@ type UpdateClientPayload struct {
 
 func (r *clientRepository) Update(ctx context.Context, req *UpdateClientPayload) (*entity.Client, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update client")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update client")
 	}
 
 	client := &model.Client{Base: model.Base{ID: req.ID}}
@@ -251,7 +252,7 @@ func (r *clientRepository) Update(ctx context.Context, req *UpdateClientPayload)
 
 func (r *clientRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete client")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete client")
 	}
 
 	client := &model.Client{Base: model.Base{ID: id}}
@@ -279,7 +280,7 @@ func (r *clientRepository) UpdateStaleIcons(ctx context.Context) error {
 
 func (r *clientRepository) IsCodeExists(ctx context.Context, code string) (bool, error) {
 	if code == "" {
-		return false, handleDBError(ErrDataNull, r.GetTableName(), "check client code exists")
+		return false, handleDBError(exception.ErrDataNull, r.GetTableName(), "check client code exists")
 	}
 
 	exist, err := r.db.NewSelect().

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -39,7 +40,7 @@ func (r *roleRepository) GetTableName() string {
 
 func (r *roleRepository) Create(ctx context.Context, req *entity.Role) (*entity.Role, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create role")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create role")
 	}
 
 	role := model.AsRole(req)
@@ -123,7 +124,7 @@ func (r *roleRepository) Find(ctx context.Context, filter *FilterRolePayload) ([
 
 func (r *roleRepository) FindByID(ctx context.Context, id uint) (*entity.Role, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find role by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find role by id")
 	}
 
 	role := &model.Role{Base: model.Base{ID: id}}
@@ -145,7 +146,7 @@ type UpdateRolePayload struct {
 
 func (r *roleRepository) Update(ctx context.Context, req *UpdateRolePayload) (*entity.Role, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update role")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update role")
 	}
 
 	current, err := r.FindByID(ctx, req.ID)
@@ -179,7 +180,7 @@ func (r *roleRepository) Update(ctx context.Context, req *UpdateRolePayload) (*e
 
 func (r *roleRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete role")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete role")
 	}
 
 	role := &model.Role{Base: model.Base{ID: id}}
@@ -198,11 +199,11 @@ func (r *roleRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *roleRepository) AttachPermissions(ctx context.Context, roleID uint, permissionIDs []uint) ([]*entity.RolePermission, error) {
 	if roleID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "attach permissions to role")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "attach permissions to role")
 	}
 
 	if len(permissionIDs) == 0 {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "attach permissions to role")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "attach permissions to role")
 	}
 
 	rolePermissions := model.AsRolePermissions(roleID, permissionIDs)
@@ -215,11 +216,11 @@ func (r *roleRepository) AttachPermissions(ctx context.Context, roleID uint, per
 
 func (r *roleRepository) DetachPermissions(ctx context.Context, roleID uint, permissionIDs []uint) error {
 	if roleID == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "detach permissions from role")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "detach permissions from role")
 	}
 
 	if len(permissionIDs) == 0 {
-		return handleDBError(ErrDataNull, r.GetTableName(), "detach permissions from role")
+		return handleDBError(exception.ErrDataNull, r.GetTableName(), "detach permissions from role")
 	}
 
 	rolePermissions := model.AsRolePermissions(roleID, permissionIDs)
@@ -239,7 +240,7 @@ func (r *roleRepository) DetachPermissions(ctx context.Context, roleID uint, per
 
 func (r *roleRepository) SyncPermissions(ctx context.Context, roleID uint, permissionIDs []uint) ([]*entity.RolePermission, error) {
 	if roleID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "sync permissions to role")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "sync permissions to role")
 	}
 
 	role, err := r.FindByID(ctx, roleID)

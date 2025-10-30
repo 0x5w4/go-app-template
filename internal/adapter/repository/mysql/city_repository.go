@@ -4,6 +4,7 @@ import (
 	"context"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -95,7 +96,7 @@ func (r *cityRepository) Find(ctx context.Context, filter *FilterCityPayload) ([
 
 func (r *cityRepository) FindByID(ctx context.Context, id uint) (*entity.City, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find city by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find city by id")
 	}
 
 	city := &model.City{ID: id}

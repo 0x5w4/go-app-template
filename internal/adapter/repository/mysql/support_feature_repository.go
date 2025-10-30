@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/cockroachdb/errors"
@@ -42,7 +43,7 @@ func (r *supportFeatureRepository) GetTableName() string {
 
 func (r *supportFeatureRepository) Create(ctx context.Context, req *entity.SupportFeature) (*entity.SupportFeature, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create support feature")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create support feature")
 	}
 
 	supportFeature := model.AsSupportFeature(req)
@@ -55,7 +56,7 @@ func (r *supportFeatureRepository) Create(ctx context.Context, req *entity.Suppo
 
 func (r *supportFeatureRepository) BulkCreate(ctx context.Context, req []*entity.SupportFeature) ([]*entity.SupportFeature, error) {
 	if len(req) == 0 {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "bulk create support features")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "bulk create support features")
 	}
 
 	supportFeatures := model.AsSupportFeatures(req)
@@ -157,7 +158,7 @@ func (r *supportFeatureRepository) Find(ctx context.Context, filter *FilterSuppo
 
 func (r *supportFeatureRepository) FindByID(ctx context.Context, id uint) (*entity.SupportFeature, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find support feature by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find support feature by id")
 	}
 
 	supportFeature := &model.SupportFeature{Base: model.Base{ID: id}}
@@ -178,7 +179,7 @@ type UpdateSupportFeaturePayload struct {
 
 func (r *supportFeatureRepository) Update(ctx context.Context, req *UpdateSupportFeaturePayload) (*entity.SupportFeature, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update support feature: ID is zero")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update support feature: ID is zero")
 	}
 
 	supportFeatureModel := &model.SupportFeature{
@@ -230,7 +231,7 @@ func (r *supportFeatureRepository) Update(ctx context.Context, req *UpdateSuppor
 
 func (r *supportFeatureRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete support feature")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete support feature")
 	}
 
 	supportFeature := &model.SupportFeature{Base: model.Base{ID: id}}
@@ -271,7 +272,7 @@ func (r *supportFeatureRepository) GetExistingCodes(ctx context.Context, codes [
 
 func (r *supportFeatureRepository) CheckCodeExists(ctx context.Context, code string) (bool, error) {
 	if code == "" {
-		return false, handleDBError(ErrDataNull, r.GetTableName(), "check support feature code exists")
+		return false, handleDBError(exception.ErrDataNull, r.GetTableName(), "check support feature code exists")
 	}
 
 	query := r.db.NewSelect().Model((*model.SupportFeature)(nil)).Where("code_active = ?", code)
@@ -286,7 +287,7 @@ func (r *supportFeatureRepository) CheckCodeExists(ctx context.Context, code str
 
 func (r *supportFeatureRepository) CheckKeyExists(ctx context.Context, key string, id *uint) (bool, error) {
 	if key == "" {
-		return false, handleDBError(ErrDataNull, r.GetTableName(), "check support feature key exists")
+		return false, handleDBError(exception.ErrDataNull, r.GetTableName(), "check support feature key exists")
 	}
 
 	query := r.db.NewSelect().Model((*model.SupportFeature)(nil)).Where("key_active = ?", key)

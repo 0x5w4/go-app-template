@@ -84,17 +84,10 @@ func (s *echoServer) requestLoggerMiddleware() echo.MiddlewareFunc {
 func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			var (
-				ErrAuthHeaderMissing = exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderMissing, "Authorization header not provided")
-				ErrAuthHeaderInvalid = exception.New(exception.TypePermissionDenied, exception.CodeAuthHeaderInvalid, "Invalid authorization header format")
-				ErrAuthUnsupported   = exception.New(exception.TypePermissionDenied, exception.CodeAuthUnsupported, "Unsupported authorization type")
-				ErrAuthTokenInvalid  = exception.New(exception.TypeBadRequest, exception.CodeTokenInvalid, "Invalid or expired token")
-			)
-
 			authHeader := c.Request().Header.Get(echo.HeaderAuthorization)
 			if authHeader == "" {
 				if autoDenied {
-					return ErrAuthHeaderMissing
+					return exception.ErrAuthHeaderMissing
 				}
 
 				return next(c)
@@ -102,18 +95,29 @@ func (s *echoServer) authMiddleware(autoDenied bool) echo.MiddlewareFunc {
 
 			parts := strings.Fields(authHeader)
 			if len(parts) != 2 {
-				return errors.Wrapf(ErrAuthHeaderInvalid, "expected 2 parts, got %d", len(parts))
+				return errors.Wrapf(exception.ErrAuthHeaderInvalid, "expected 2 parts, got %d", len(parts))
 			}
 
 			tokenType, accessToken := parts[0], parts[1]
 
-			if strings.EqualFold(tokenType, constant.TokenType) {
-				return errors.Wrapf(ErrAuthUnsupported, "scheme %q is not %s", tokenType, constant.TokenType)
+			if !strings.EqualFold(tokenType, constant.TokenType) {
+				return errors.Wrapf(exception.ErrAuthUnsupported, "scheme %q is not %s", tokenType, constant.TokenType)
 			}
 
 			claims, verifyErr := s.token.VerifyAccessToken(accessToken)
 			if verifyErr != nil {
-				return ErrAuthTokenInvalid
+				return exception.ErrAuthTokenInvalid
+			}
+
+			ctx := c.Request().Context()
+
+			isBlacklisted, err := s.redis.CheckTokenBlacklisted(ctx, claims.ID)
+			if err != nil {
+				return exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "Failed to verify token")
+			}
+
+			if isBlacklisted {
+				return exception.ErrAuthTokenBlacklisted
 			}
 
 			authParam := service.AuthParams{

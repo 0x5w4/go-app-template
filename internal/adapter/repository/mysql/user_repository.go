@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
+	"github.com/cockroachdb/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -22,6 +24,7 @@ type UserRepository interface {
 	AttachRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error)
 	DetachRoles(ctx context.Context, userID uint, roleIDs []uint) error
 	SyncRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error)
+	HasPermission(ctx context.Context, userID uint, permissionCode string) (bool, error)
 }
 
 type userRepository struct {
@@ -39,7 +42,7 @@ func (r *userRepository) GetTableName() string {
 
 func (r *userRepository) Create(ctx context.Context, req *entity.User) (*entity.User, error) {
 	if req == nil {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "create user")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "create user")
 	}
 
 	user := model.AsUser(req)
@@ -124,7 +127,7 @@ func (r *userRepository) Find(ctx context.Context, filter *FilterUserPayload) ([
 
 func (r *userRepository) FindByID(ctx context.Context, id uint) (*entity.User, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find user by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find user by id")
 	}
 
 	user := &model.User{Base: model.Base{ID: id}}
@@ -146,7 +149,7 @@ type UpdateUserPayload struct {
 
 func (r *userRepository) Update(ctx context.Context, req *UpdateUserPayload) (*entity.User, error) {
 	if req.ID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "update user: ID is zero")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "update user: ID is zero")
 	}
 
 	userModel := &model.User{
@@ -201,7 +204,7 @@ func (r *userRepository) Update(ctx context.Context, req *UpdateUserPayload) (*e
 
 func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	if id == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "delete user")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "delete user")
 	}
 
 	user := &model.User{Base: model.Base{ID: id}}
@@ -220,11 +223,11 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 
 func (r *userRepository) AttachRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error) {
 	if userID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "attach roles to user")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "attach roles to user")
 	}
 
 	if len(roleIDs) == 0 {
-		return nil, handleDBError(ErrDataNull, r.GetTableName(), "attach roles to user")
+		return nil, handleDBError(exception.ErrDataNull, r.GetTableName(), "attach roles to user")
 	}
 
 	userRoles := model.AsUserRoles(userID, roleIDs)
@@ -237,11 +240,11 @@ func (r *userRepository) AttachRoles(ctx context.Context, userID uint, roleIDs [
 
 func (r *userRepository) DetachRoles(ctx context.Context, userID uint, roleIDs []uint) error {
 	if userID == 0 {
-		return handleDBError(ErrIDNull, r.GetTableName(), "detach roles from user")
+		return handleDBError(exception.ErrIDNull, r.GetTableName(), "detach roles from user")
 	}
 
 	if len(roleIDs) == 0 {
-		return handleDBError(ErrDataNull, r.GetTableName(), "detach roles from user")
+		return handleDBError(exception.ErrDataNull, r.GetTableName(), "detach roles from user")
 	}
 
 	userRoles := model.AsUserRoles(userID, roleIDs)
@@ -261,27 +264,78 @@ func (r *userRepository) DetachRoles(ctx context.Context, userID uint, roleIDs [
 
 func (r *userRepository) SyncRoles(ctx context.Context, userID uint, roleIDs []uint) ([]*entity.UserRole, error) {
 	if userID == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "sync roles to user")
-	}
-
-	user, err := r.FindByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(user.RoleIDs) != 0 {
-		if err := r.DetachRoles(ctx, userID, user.RoleIDs); err != nil {
-			return nil, err
-		}
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "sync roles to user")
 	}
 
 	var userRoles []*entity.UserRole
-	if len(roleIDs) != 0 {
-		userRoles, err = r.AttachRoles(ctx, userID, roleIDs)
-		if err != nil {
-			return nil, err
+
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		var currentRoleIDs []uint
+
+		err := tx.NewSelect().
+			Model((*model.UserRole)(nil)).
+			Column("role_id").
+			Where("user_id = ?", userID).
+			Scan(ctx, &currentRoleIDs)
+
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return handleDBError(err, r.GetTableName(), "sync roles: get current roles")
 		}
+
+		if len(currentRoleIDs) > 0 {
+			userRolesToDetach := model.AsUserRoles(userID, currentRoleIDs)
+			if _, err := tx.NewDelete().Model(&userRolesToDetach).WherePK().Exec(ctx); err != nil {
+				return handleDBError(err, r.GetTableName(), "sync roles: detach")
+			}
+		}
+
+		if len(roleIDs) > 0 {
+			userRolesToAttach := model.AsUserRoles(userID, roleIDs)
+
+			if _, err := tx.NewInsert().Model(&userRolesToAttach).Returning("*").Exec(ctx, &userRolesToAttach); err != nil {
+				return handleDBError(err, r.GetTableName(), "sync roles: attach")
+			}
+
+			userRoles = model.ToUserRolesDomain(userRolesToAttach)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to sync roles in transaction")
 	}
 
 	return userRoles, nil
+}
+
+func (r *userRepository) HasPermission(ctx context.Context, userID uint, permissionCode string) (bool, error) {
+	if userID == 0 {
+		return false, handleDBError(exception.ErrIDNull, r.GetTableName(), "check permission")
+	}
+
+	if permissionCode == "" {
+		return false, handleDBError(exception.ErrDataNull, r.GetTableName(), "check permission: permission code is empty")
+	}
+
+	superAdminQuery := r.db.NewSelect().
+		Model((*model.UserRole)(nil)).
+		Join("JOIN ? AS r ON r.id = user_role.role_id", r.db.NewSelect().Model((*model.Role)(nil))).
+		Where("user_role.user_id = ?", userID).
+		Where("r.super_admin = ?", true)
+
+	permissionQuery := r.db.NewSelect().
+		Model((*model.UserRole)(nil)).
+		Join("JOIN ? AS rp ON rp.role_id = user_role.role_id", r.db.NewSelect().Model((*model.RolePermission)(nil))).
+		Join("JOIN ? AS p ON p.id = rp.permission_id", r.db.NewSelect().Model((*model.Permission)(nil))).
+		Where("user_role.user_id = ?", userID).
+		Where("p.code = ?", permissionCode)
+
+	hasPermission, err := r.db.NewSelect().
+		TableExpr("(?) AS combined_query", superAdminQuery.Union(permissionQuery)).
+		Exists(ctx)
+	if err != nil {
+		return false, handleDBError(err, r.GetTableName(), "check permission")
+	}
+
+	return hasPermission, nil
 }

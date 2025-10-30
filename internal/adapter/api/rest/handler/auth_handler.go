@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"goapptemp/constant"
 	"goapptemp/internal/adapter/api/rest/response"
 	"goapptemp/internal/adapter/api/rest/serializer"
 	"goapptemp/internal/domain/service"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/exception"
+	"goapptemp/internal/shared/token"
 
 	"github.com/cockroachdb/errors"
 	validator "github.com/go-playground/validator/v10"
@@ -88,4 +90,41 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	data := serializer.SerializeToken(token)
 
 	return response.Success(c, "Refresh success", data)
+}
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+func (h *AuthHandler) Logout(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(LogoutRequest)
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "failed to bind data")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "request validation failed")
+	}
+
+	claims, ok := ctx.Value(constant.CtxKeyAuthPayload).(*token.AccessTokenClaims)
+	if !ok || claims == nil {
+		return exception.New(exception.TypeUnauthorized, exception.CodeUnauthorized, "invalid authorization claims")
+	}
+
+	err := h.service.Auth().Logout(ctx, &service.LogoutRequest{
+		AccessTokenClaims: claims,
+		RefreshToken:      req.RefreshToken,
+	})
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "Logout success", nil)
 }

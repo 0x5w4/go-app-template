@@ -1,5 +1,9 @@
 package exception
 
+import (
+	"github.com/cockroachdb/errors"
+)
+
 const (
 	TypeInternalError        ErrorType = "Internal Error"
 	TypeServiceUnavailable   ErrorType = "Service Unavailable"
@@ -40,8 +44,32 @@ const (
 	CodeDuplicateResource     = "DUPLICATE_RESOURCE"
 	CodeTokenInvalid          = "TOKEN_INVALID"
 	CodeTokenExpired          = "TOKEN_EXPIRED"
+	CodeTokenBlacklisted      = "TOKEN_BLACKLISTED"
 	CodeAuthHeaderMissing     = "AUTH_HEADER_MISSING"
 	CodeAuthHeaderInvalid     = "AUTH_HEADER_INVALID"
 	CodeAuthUnsupported       = "AUTH_UNSUPPORTED"
 	CodeDBConstraintViolation = "DB_CONSTRAINT_VIOLATION"
+)
+
+var (
+	ErrCodeConflict   = errors.New("client code conflict")
+	ErrDuplicateEntry = errors.New("duplicate entry")
+	ErrForeignKey     = errors.New("foreign key constraint violation")
+	ErrDataTooLong    = errors.New("data too long")
+	ErrDataInvalid    = errors.New("data is invalid")
+	ErrDataNull       = errors.New("data is null")
+	ErrIDNull         = errors.New("id is null")
+	ErrNotNull        = errors.New("null constraint violation")
+	ErrNotFound       = errors.New("no rows in result set")
+	ErrTimeout        = errors.New("operation timed out")
+	ErrConnection     = errors.New("connection error")
+	ErrTxFailed       = errors.New("transaction failed")
+)
+
+var (
+	ErrAuthHeaderMissing    = New(TypePermissionDenied, CodeAuthHeaderMissing, "Authorization header not provided")
+	ErrAuthHeaderInvalid    = New(TypePermissionDenied, CodeAuthHeaderInvalid, "Invalid authorization header format")
+	ErrAuthUnsupported      = New(TypePermissionDenied, CodeAuthUnsupported, "Unsupported authorization type")
+	ErrAuthTokenInvalid     = New(TypeBadRequest, CodeTokenInvalid, "Invalid or expired token")
+	ErrAuthTokenBlacklisted = New(TypePermissionDenied, CodeTokenBlacklisted, "Token has been logged out")
 )

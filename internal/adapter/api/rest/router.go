@@ -19,6 +19,8 @@ func (s *echoServer) setupRouter() {
 		authGroup := apiV1.Group("/auth")
 		{
 			authGroup.POST("/login", s.handler.Auth().Login, s.rateLimitMiddleware())
+			authGroup.POST("/refresh", s.handler.Auth().Refresh)
+			authGroup.POST("/logout", s.handler.Auth().Logout)
 		}
 
 		webhookGroup := apiV1.Group("/webhook")
@@ -50,11 +52,11 @@ func (s *echoServer) setupRouter() {
 		userGroup := apiV1.Group("/users")
 		userGroup.Use(s.authMiddleware(false))
 		{
-			userGroup.POST("", s.handler.User().CreateUser)
 			userGroup.GET("", s.handler.User().FindUsers)
 			userGroup.GET("/:id", s.handler.User().FindOneUser)
-			userGroup.PUT("/:id", s.handler.User().UpdateUser)
-			userGroup.DELETE("/:id", s.handler.User().DeleteUser)
+			userGroup.POST("", s.handler.User().CreateUser, s.authMiddleware(true))
+			userGroup.PUT("/:id", s.handler.User().UpdateUser, s.authMiddleware(true))
+			userGroup.DELETE("/:id", s.handler.User().DeleteUser, s.authMiddleware(true))
 		}
 
 		roleGroup := apiV1.Group("/roles")

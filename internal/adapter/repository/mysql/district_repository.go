@@ -4,6 +4,7 @@ import (
 	"context"
 	"goapptemp/internal/adapter/repository/mysql/model"
 	"goapptemp/internal/domain/entity"
+	"goapptemp/internal/shared/exception"
 	"goapptemp/pkg/logger"
 
 	"github.com/uptrace/bun"
@@ -96,7 +97,7 @@ func (r *districtRepository) Find(ctx context.Context, filter *FilterDistrictPay
 
 func (r *districtRepository) FindByID(ctx context.Context, id uint) (*entity.District, error) {
 	if id == 0 {
-		return nil, handleDBError(ErrIDNull, r.GetTableName(), "find district by id")
+		return nil, handleDBError(exception.ErrIDNull, r.GetTableName(), "find district by id")
 	}
 
 	district := &model.District{ID: id}

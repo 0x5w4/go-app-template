@@ -3,23 +3,12 @@ package mysqlrepository
 import (
 	"database/sql"
 	"fmt"
+	"goapptemp/internal/shared/exception"
 	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-sql-driver/mysql"
-)
-
-var (
-	ErrCodeConflict   = errors.New("client code conflict")
-	ErrDuplicateEntry = errors.New("duplicate entry")
-	ErrForeignKey     = errors.New("foreign key constraint violation")
-	ErrDataTooLong    = errors.New("data too long")
-	ErrDataInvalid    = errors.New("data is invalid")
-	ErrDataNull       = errors.New("data is null")
-	ErrIDNull         = errors.New("id is null")
-	ErrNotNull        = errors.New("null constraint violation")
-	ErrNotFound       = errors.New("no rows in result set")
 )
 
 var duplicateKeyRegex = regexp.MustCompile(`for key '(.+?)'`)
@@ -30,8 +19,8 @@ func transformDBIdentifier(tableName, identifier string) string {
 
 	prefixes := []string{"uq_", "uk_", "idx_", "fk_"}
 	for _, prefix := range prefixes {
-		if strings.HasPrefix(processedName, prefix) {
-			processedName = strings.TrimPrefix(processedName, prefix)
+		if after, ok := strings.CutPrefix(processedName, prefix); ok {
+			processedName = after
 			break
 		}
 	}
@@ -63,7 +52,7 @@ func handleDBError(err error, tableName, operationDesc string) error {
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return errors.Wrap(ErrNotFound, operationDesc)
+		return errors.Wrap(exception.ErrNotFound, operationDesc)
 	}
 
 	var mysqlErr *mysql.MySQLError
@@ -74,7 +63,7 @@ func handleDBError(err error, tableName, operationDesc string) error {
 
 		switch mysqlErr.Number {
 		case 1062:
-			baseErrorToWrap = ErrDuplicateEntry
+			baseErrorToWrap = exception.ErrDuplicateEntry
 
 			matches := duplicateKeyRegex.FindStringSubmatch(mysqlErr.Message)
 			if len(matches) > 1 {
@@ -83,10 +72,10 @@ func handleDBError(err error, tableName, operationDesc string) error {
 				specificMessage = fmt.Sprintf("Duplicate entry for field '%s'", fieldName)
 			}
 		case 1451, 1452, 1216, 1217:
-			wrappedForeignKeyErr := errors.Wrap(ErrForeignKey, mysqlErr.Message)
+			wrappedForeignKeyErr := errors.Wrap(exception.ErrForeignKey, mysqlErr.Message)
 			return errors.Wrap(wrappedForeignKeyErr, operationDesc)
 		case 1048:
-			baseErrorToWrap = ErrNotNull
+			baseErrorToWrap = exception.ErrNotNull
 
 			parts := strings.SplitN(mysqlErr.Message, "'", 3)
 			if len(parts) >= 2 {
@@ -94,7 +83,7 @@ func handleDBError(err error, tableName, operationDesc string) error {
 				specificMessage = fmt.Sprintf("Field '%s' cannot be null", columnName)
 			}
 		case 1406:
-			baseErrorToWrap = ErrDataTooLong
+			baseErrorToWrap = exception.ErrDataTooLong
 
 			parts := strings.SplitN(mysqlErr.Message, "'", 3)
 			if len(parts) >= 2 {

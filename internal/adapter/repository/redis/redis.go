@@ -18,9 +18,11 @@ type RedisRepository interface {
 	GetBlockIPTTL(ctx context.Context, ip string) (time.Duration, error)
 	RecordUserFailure(ctx context.Context, phone string) error
 	RecordIPFailure(ctx context.Context, ip string) (blockNow bool, retryAfter int, err error)
-	DeleteUserAttempt(ctx context.Context, identifier string) error
-	DeleteIPAttempt(ctx context.Context, ip string) error
+	DeleteUserAttempts(ctx context.Context, identifier string) error
+	DeleteIPAttempts(ctx context.Context, ip string) error
 	DeleteBlockCount(ctx context.Context, ip string) error
+	BlacklistToken(ctx context.Context, jti string, ttl time.Duration) error
+	CheckTokenBlacklisted(ctx context.Context, jti string) (bool, error)
 }
 
 type redisRepository struct {
