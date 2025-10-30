@@ -19,6 +19,7 @@ var _ AuthService = (*authService)(nil)
 
 type AuthService interface {
 	Login(ctx context.Context, req *LoginRequest) (*entity.User, error)
+	Refresh(ctx context.Context, req *RefreshRequest) (*entity.Token, error)
 	AuthorizationCheck(ctx context.Context, userID uint, permissionCode string) (bool, error)
 }
 
@@ -49,11 +50,10 @@ type LoginRequest struct {
 }
 
 func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.User, error) {
-
 	var (
 		user                  *entity.User
 		passwordHashToCompare string
-		loginSuccessful       bool = false
+		loginSuccessful       = false
 	)
 
 	ip, _ := ctx.Value(constant.CtxKeyRequestIP).(string)
@@ -71,20 +71,16 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 	}
 
 	if len(users) == 0 || users[0] == nil || isLocked {
-
 		passwordHashToCompare = constant.DummyPasswordHash
 		user = nil
 	} else {
-
 		user = users[0]
 		passwordHashToCompare = user.Password
 	}
 
 	errPass := shared.CheckPassword(req.Password, passwordHashToCompare)
 	if errPass == nil {
-
 		if user != nil && !isLocked {
-
 			loginSuccessful = true
 		}
 	}
@@ -92,16 +88,18 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 	if !loginSuccessful {
 		go func() {
 			bgCtx := context.Background()
+
 			errUser := s.repository.Redis().RecordUserFailure(bgCtx, req.Username)
 			if errUser != nil {
-
 				s.logger.Error().Msgf("Failed to record user failure: %v", errUser)
 			}
+
 			_, _, errIP := s.repository.Redis().RecordIPFailure(bgCtx, ip)
 			if errIP != nil {
 				s.logger.Error().Msgf(fmt.Sprintf("Failed to record IP failure: %v", errIP))
 			}
 		}()
+
 		return nil, errGenericLogin
 	}
 

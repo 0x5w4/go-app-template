@@ -58,3 +58,34 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	return response.Success(c, "Login success", data)
 }
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+func (h *AuthHandler) Refresh(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(RefreshRequest)
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "failed to bind data")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		} else {
+			return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "request validation failed")
+		}
+	}
+
+	token, err := h.service.Auth().Refresh(ctx, &service.RefreshRequest{RefreshToken: req.RefreshToken})
+	if err != nil {
+		return err
+	}
+
+	data := serializer.SerializeToken(token)
+
+	return response.Success(c, "Refresh success", data)
+}

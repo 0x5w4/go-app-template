@@ -2,6 +2,7 @@ package redishook
 
 import (
 	"context"
+	"errors"
 	"goapptemp/constant"
 	"goapptemp/pkg/logger"
 	"net"
@@ -81,9 +82,10 @@ func (h *LoggerHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 		}
 
 		var logEvent logger.LogEvent
+
 		switch {
 		case err != nil:
-			if err == redis.Nil {
+			if errors.Is(err, redis.Nil) {
 				logEvent = subLogger.Info().Err(err)
 			} else {
 				logEvent = subLogger.Error().Err(err)
@@ -113,13 +115,17 @@ func (h *LoggerHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.P
 
 		duration := time.Since(startTime)
 
-		var pipelineFailed bool
-		var firstErr error
+		var (
+			pipelineFailed bool
+			firstErr       error
+		)
+
 		if err == nil {
 			for _, cmd := range cmds {
-				if cmd.Err() != nil && cmd.Err() != redis.Nil {
+				if cmd.Err() != nil && !errors.Is(cmd.Err(), redis.Nil) {
 					pipelineFailed = true
 					firstErr = cmd.Err()
+
 					break
 				}
 			}
@@ -140,6 +146,7 @@ func (h *LoggerHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.P
 		}
 
 		var logEvent logger.LogEvent
+
 		switch {
 		case pipelineFailed:
 			logEvent = subLogger.Error().Err(firstErr)

@@ -137,6 +137,7 @@ func (s *echoServer) rateLimitMiddleware() echo.MiddlewareFunc {
 			if err == nil && ttl > 0 {
 				retryAfterSeconds := int(ttl.Seconds())
 				c.Response().Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
+
 				return c.JSON(http.StatusTooManyRequests, map[string]string{
 					"message": "Too Many Requests",
 				})
