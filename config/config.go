@@ -17,6 +17,7 @@ type Config struct {
 	Drive     *DriveConfig
 	StaleTask *StaleTaskConfig
 	Redis     *RedisConfig
+	Gmail     *GmailConfig
 }
 
 type AppConfig struct {
@@ -25,6 +26,7 @@ type AppConfig struct {
 	Environment string
 	Debug       bool
 	UsePubsub   bool
+	FrontendURL string
 }
 
 type TracerConfig struct {
@@ -79,6 +81,11 @@ type DriveConfig struct {
 	IconFolderID string
 }
 
+type GmailConfig struct {
+	CredFile string
+	Sender   string
+}
+
 type StaleTaskConfig struct {
 	MaxStaleTime  int
 	CheckInterval int
@@ -107,6 +114,7 @@ func LoadConfig(envPath string) (*Config, error) {
 			Environment: viper.GetString("APP_ENVIRONMENT"),
 			Debug:       viper.GetBool("APP_DEBUG"),
 			UsePubsub:   viper.GetBool("APP_USE_PUBSUB"),
+			FrontendURL: viper.GetString("FRONTEND_URL"),
 		},
 		Tracer: &TracerConfig{
 			ServerURL:      viper.GetString("ELASTIC_APM_SERVER_URL"),
@@ -156,6 +164,10 @@ func LoadConfig(envPath string) (*Config, error) {
 		StaleTask: &StaleTaskConfig{
 			MaxStaleTime:  viper.GetInt("STALE_TASK_MAX_STALE_TIME"),
 			CheckInterval: viper.GetInt("STALE_TASK_CHECK_INTERVAL"),
+		},
+		Gmail: &GmailConfig{
+			CredFile: viper.GetString("GMAIL_CRED_FILE"),
+			Sender:   viper.GetString("GMAIL_SENDER"),
 		},
 	}
 

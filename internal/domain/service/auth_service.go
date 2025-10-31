@@ -14,6 +14,9 @@ import (
 	"goapptemp/internal/shared/token"
 	"goapptemp/pkg/logger"
 	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/google/uuid"
 )
 
 var _ AuthService = (*authService)(nil)
@@ -23,21 +26,32 @@ type AuthService interface {
 	Refresh(ctx context.Context, req *RefreshRequest) (*entity.Token, error)
 	Logout(ctx context.Context, req *LogoutRequest) error
 	AuthorizationCheck(ctx context.Context, userID uint, permissionCode string) (bool, error)
+	ForgetPassword(ctx context.Context, req *ForgetPasswordRequest) error
+	VerifyResetToken(ctx context.Context, req *VerifyResetTokenRequest) error
+	ResetPassword(ctx context.Context, req *ResetPasswordRequest) error
 }
 
 type authService struct {
-	config     *config.Config
-	token      token.Token
-	repository repository.Repository
-	logger     logger.Logger
+	config          *config.Config
+	token           token.Token
+	repository      repository.Repository
+	logger          logger.Logger
+	notificationSvc NotificationService
 }
 
-func NewAuthService(config *config.Config, token token.Token, repo repository.Repository, log logger.Logger) *authService {
+func NewAuthService(
+	config *config.Config,
+	token token.Token,
+	repo repository.Repository,
+	log logger.Logger,
+	notificationSvc NotificationService,
+) *authService {
 	return &authService{
-		config:     config,
-		token:      token,
-		repository: repo,
-		logger:     log,
+		config:          config,
+		token:           token,
+		repository:      repo,
+		logger:          log,
+		notificationSvc: notificationSvc,
 	}
 }
 
@@ -107,9 +121,17 @@ func (s *authService) Login(ctx context.Context, req *LoginRequest) (*entity.Use
 
 	go func() {
 		bgCtx := context.Background()
-		_ = s.repository.Redis().DeleteUserAttempts(bgCtx, req.Username)
-		_ = s.repository.Redis().DeleteIPAttempts(bgCtx, ip)
-		_ = s.repository.Redis().DeleteBlockCount(bgCtx, ip)
+		if err := s.repository.Redis().DeleteUserAttempts(bgCtx, req.Username); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete user attempts for %s", req.Username)
+		}
+
+		if err := s.repository.Redis().DeleteIPAttempts(bgCtx, ip); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete IP attempts for %s", ip)
+		}
+
+		if err := s.repository.Redis().DeleteBlockCount(bgCtx, ip); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete block count for %s", ip)
+		}
 	}()
 
 	accessToken, accessExpiresAt, err := s.token.GenerateAccessToken(user.ID)
@@ -178,12 +200,12 @@ func (s *authService) Logout(ctx context.Context, req *LogoutRequest) error {
 
 	if atTTL > 0 {
 		if req.AccessTokenClaims.ID == "" {
-			s.logger.Error().Msg("Access token has no JTI (ID), cannot blacklist")
-		} else {
-			err := s.repository.Redis().BlacklistToken(ctx, req.AccessTokenClaims.ID, atTTL)
-			if err != nil {
-				s.logger.Error().Msgf("Failed to blacklist access token: %v", err)
-			}
+			return exception.New(exception.TypeInternalError, "JTI_MISSING", "Access token has no JTI (ID), cannot blacklist")
+		}
+
+		err := s.repository.Redis().BlacklistToken(ctx, req.AccessTokenClaims.ID, atTTL)
+		if err != nil {
+			return serror.TranslateRepoError(err)
 		}
 	}
 
@@ -205,12 +227,12 @@ func (s *authService) Logout(ctx context.Context, req *LogoutRequest) error {
 
 	if rtTTL > 0 {
 		if rtClaims.ID == "" {
-			s.logger.Error().Msg("Refresh token has no JTI (ID), cannot blacklist")
-		} else {
-			err := s.repository.Redis().BlacklistToken(ctx, rtClaims.ID, rtTTL)
-			if err != nil {
-				s.logger.Error().Msgf("Failed to blacklist refresh token: %v", err)
-			}
+			return exception.New(exception.TypeInternalError, "JTI_MISSING", "Refresh token has no JTI (ID), cannot blacklist")
+		}
+
+		err := s.repository.Redis().BlacklistToken(ctx, rtClaims.ID, rtTTL)
+		if err != nil {
+			return serror.TranslateRepoError(err)
 		}
 	}
 
@@ -228,4 +250,141 @@ func (s *authService) AuthorizationCheck(ctx context.Context, userID uint, permi
 	}
 
 	return hasPermission, nil
+}
+
+type ForgetPasswordRequest struct {
+	Email string
+}
+
+func (s *authService) ForgetPassword(ctx context.Context, req *ForgetPasswordRequest) error {
+	users, _, err := s.repository.MySQL().User().Find(ctx, &mysqlrepository.FilterUserPayload{
+		Emails: []string{req.Email},
+	})
+	if err != nil {
+		s.logger.Error().Err(err).Msgf("Failed to find user by email for password reset")
+
+		return nil
+	}
+
+	if len(users) == 0 || users[0] == nil {
+		s.logger.Warn().Msgf("Password reset attempt for non-existent email: %s", req.Email)
+		return nil
+	}
+
+	user := users[0]
+	resetToken := uuid.NewString()
+	ttl := time.Minute * 15
+
+	err = s.repository.Redis().StoreResetToken(ctx, resetToken, user.ID, ttl)
+	if err != nil {
+		return serror.TranslateRepoError(err)
+	}
+
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s",
+		s.config.App.FrontendURL,
+		resetToken,
+	)
+
+	go func() {
+		bgCtx := context.Background()
+
+		err := s.notificationSvc.SendPasswordResetEmail(bgCtx, user.Email, resetLink)
+		if err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to send password reset email to user: %d", user.ID)
+		}
+	}()
+
+	return nil
+}
+
+type VerifyResetTokenRequest struct {
+	Token string
+}
+
+func (s *authService) VerifyResetToken(ctx context.Context, req *VerifyResetTokenRequest) error {
+	_, err := s.repository.Redis().GetUserIDFromResetToken(ctx, req.Token)
+	if err != nil {
+		if errors.Is(err, exception.ErrNotFound) {
+			return exception.New(exception.TypeBadRequest, "INVALID_TOKEN", "Invalid or expired reset token")
+		}
+
+		return serror.TranslateRepoError(err)
+	}
+
+	return nil
+}
+
+type ResetPasswordRequest struct {
+	Token       string
+	NewPassword string
+}
+
+func (s *authService) ResetPassword(ctx context.Context, req *ResetPasswordRequest) error {
+	userID, err := s.repository.Redis().GetUserIDFromResetToken(ctx, req.Token)
+	if err != nil {
+		if errors.Is(err, exception.ErrNotFound) {
+			return exception.New(exception.TypeBadRequest, "INVALID_TOKEN", "Invalid or expired reset token")
+		}
+
+		return serror.TranslateRepoError(err)
+	}
+
+	if len(req.NewPassword) < constant.MinPasswordLength {
+		return exception.Newf(exception.TypeBadRequest, exception.CodeValidationFailed, "Password must be at least %d characters long", constant.MinPasswordLength)
+	}
+
+	user, err := s.repository.MySQL().User().FindByID(ctx, userID)
+	if err != nil {
+		return serror.TranslateRepoError(err)
+	}
+
+	hashedPassword, err := shared.HashPassword(req.NewPassword)
+	if err != nil {
+		return exception.Wrap(err, exception.TypeInternalError, exception.CodeInternalError, "failed to hash new password")
+	}
+
+	updatePayload := &mysqlrepository.UpdateUserPayload{
+		ID:       userID,
+		Password: &hashedPassword,
+	}
+	if _, err := s.repository.MySQL().User().Update(ctx, updatePayload); err != nil {
+		return serror.TranslateRepoError(err)
+	}
+
+	go func() {
+		bgCtx := context.Background()
+
+		err := s.repository.Redis().DeleteResetToken(bgCtx, req.Token)
+		if err != nil {
+			s.logger.Error().Err(err).Msgf("CRITICAL: Failed to delete reset token for user %d. Token: %s", userID, req.Token)
+		}
+	}()
+
+	go func() {
+		bgCtx := context.Background()
+		ip, _ := ctx.Value(constant.CtxKeyRequestIP).(string)
+
+		if err := s.repository.Redis().DeleteUserAttempts(bgCtx, user.Username); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete user attempts for %s", user.Username)
+		}
+
+		if err := s.repository.Redis().DeleteIPAttempts(bgCtx, ip); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete IP attempts for %s", ip)
+		}
+
+		if err := s.repository.Redis().DeleteBlockCount(bgCtx, ip); err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to delete block count for %s", ip)
+		}
+	}()
+
+	go func() {
+		bgCtx := context.Background()
+
+		err := s.notificationSvc.SendPasswordResetSuccessEmail(bgCtx, user.Email)
+		if err != nil {
+			s.logger.Error().Err(err).Msgf("Failed to send password reset success email to user: %d", user.ID)
+		}
+	}()
+
+	return nil
 }

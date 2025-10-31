@@ -21,6 +21,9 @@ func (s *echoServer) setupRouter() {
 			authGroup.POST("/login", s.handler.Auth().Login, s.rateLimitMiddleware())
 			authGroup.POST("/refresh", s.handler.Auth().Refresh)
 			authGroup.POST("/logout", s.handler.Auth().Logout)
+			authGroup.POST("/forget-password", s.handler.Auth().ForgetPassword, s.rateLimitMiddleware())
+			authGroup.POST("/verify-reset-token", s.handler.Auth().VerifyResetToken)
+			authGroup.POST("/reset-password", s.handler.Auth().ResetPassword)
 		}
 
 		webhookGroup := apiV1.Group("/webhook")

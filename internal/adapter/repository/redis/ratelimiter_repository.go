@@ -11,15 +11,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const (
-	KeyPatternUserLock       = "lock:user:%s"
-	KeyPatternBlockIP        = "block:ip:%s"
-	KeyPatternUserAttempts   = "attempts:user:%s"
-	KeyPatternIPAttempts     = "attempts:ip:%s"
-	KeyPatternBlockCountIP   = "blockcount:ip:%s"
-	KeyPatternBlacklistToken = "blacklist:token:%s"
-)
-
 func (r *redisRepository) CheckLockedUserExists(ctx context.Context, identifier string) (bool, error) {
 	userLockKey := fmt.Sprintf(KeyPatternUserLock, identifier)
 

@@ -128,3 +128,95 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 
 	return response.Success(c, "Logout success", nil)
 }
+
+type ForgetPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+func (h *AuthHandler) ForgetPassword(c echo.Context) error {
+	ctx := c.Request().Context()
+	req := new(ForgetPasswordRequest)
+
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "failed to bind data")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "request validation failed")
+	}
+
+	err := h.service.Auth().ForgetPassword(ctx, &service.ForgetPasswordRequest{
+		Email: req.Email,
+	})
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "If your email is registered, you will receive a password reset link.", nil)
+}
+
+type VerifyResetTokenRequest struct {
+	Token string `json:"token" validate:"required"`
+}
+
+func (h *AuthHandler) VerifyResetToken(c echo.Context) error {
+	ctx := c.Request().Context()
+	req := new(VerifyResetTokenRequest)
+
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "failed to bind data")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "request validation failed")
+	}
+
+	err := h.service.Auth().VerifyResetToken(ctx, &service.VerifyResetTokenRequest{
+		Token: req.Token,
+	})
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "Token is valid.", nil)
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
+func (h *AuthHandler) ResetPassword(c echo.Context) error {
+	ctx := c.Request().Context()
+	req := new(ResetPasswordRequest)
+
+	if err := c.Bind(req); err != nil {
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeBadRequest, "failed to bind data")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			return exception.FromValidationErrors(req, validationErrors)
+		}
+		return exception.Wrap(err, exception.TypeBadRequest, exception.CodeValidationFailed, "request validation failed")
+	}
+
+	err := h.service.Auth().ResetPassword(ctx, &service.ResetPasswordRequest{
+		Token:       req.Token,
+		NewPassword: req.NewPassword,
+	})
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "Password has been reset successfully.", nil)
+}

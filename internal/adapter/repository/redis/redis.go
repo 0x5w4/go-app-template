@@ -23,6 +23,9 @@ type RedisRepository interface {
 	DeleteBlockCount(ctx context.Context, ip string) error
 	BlacklistToken(ctx context.Context, jti string, ttl time.Duration) error
 	CheckTokenBlacklisted(ctx context.Context, jti string) (bool, error)
+	StoreResetToken(ctx context.Context, token string, userID uint, ttl time.Duration) error
+	GetUserIDFromResetToken(ctx context.Context, token string) (uint, error)
+	DeleteResetToken(ctx context.Context, token string) error
 }
 
 type redisRepository struct {

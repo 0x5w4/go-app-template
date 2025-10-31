@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"goapptemp/config"
 	"goapptemp/internal/adapter/pubsub"
 	"goapptemp/internal/adapter/repository"
 	"goapptemp/internal/shared"
 	"goapptemp/internal/shared/token"
+	"goapptemp/pkg/gmailsender"
 	"goapptemp/pkg/logger"
 )
 
@@ -21,6 +23,7 @@ type Service interface {
 	Province() ProvinceService
 	City() CityService
 	District() DistrictService
+	Notification() NotificationService
 	Webhook() WebhookService
 	StaleTaskDetector() StaleTaskDetector
 }
@@ -37,6 +40,7 @@ type service struct {
 	cityService           CityService
 	districtService       DistrictService
 	staleTaskDetector     StaleTaskDetector
+	notificationService   NotificationService
 }
 
 func NewService(
@@ -51,8 +55,14 @@ func NewService(
 		return nil, err
 	}
 
+	gmailSender, err := gmailsender.NewGmailSender(context.Background(), config.Gmail.CredFile, config.Gmail.CredFile, config.Gmail.Sender)
+	if err != nil {
+		return nil, err
+	}
+
+	notifService := NewNotificationService(gmailSender, logger)
 	pubsubService := NewPubsubService(config, logger, publisher)
-	authService := NewAuthService(config, token, repo, logger)
+	authService := NewAuthService(config, token, repo, logger, notifService)
 
 	return &service{
 		authService:           authService,
@@ -65,6 +75,7 @@ func NewService(
 		districtService:       NewDistrictService(config, repo, logger, authService),
 		staleTaskDetector:     NewStaleTaskDetector(config, repo, logger),
 		webhookService:        NewWebhookService(config, repo, logger),
+		notificationService:   notifService,
 	}, nil
 }
 
@@ -102,6 +113,10 @@ func (s *service) City() CityService {
 
 func (s *service) District() DistrictService {
 	return s.districtService
+}
+
+func (s *service) Notification() NotificationService {
+	return s.notificationService
 }
 
 func (s *service) Webhook() WebhookService {

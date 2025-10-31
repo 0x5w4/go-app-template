@@ -77,3 +77,7 @@ const (
 const (
 	DummyPasswordHash string = "$2a$12$7bJc1sFjQw2u3Yv9kqLq.eK1gY4Gx8h0q1zQj2Vl9cYQ1N0e8xF5e"
 )
+
+const (
+	MinPasswordLength = 8
+)
